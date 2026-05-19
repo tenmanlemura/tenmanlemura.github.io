@@ -26,9 +26,10 @@ body{background:var(--bg);color:var(--fg1);font-family:var(--sans);font-size:16p
 /* Header */
 .site-header{background:var(--teal);padding:18px 0}
 .header-inner{display:flex;align-items:center;gap:12px;padding:0 16px}
-.header-name{font-family:var(--serif);font-size:15px;color:#fff;font-weight:500;letter-spacing:0.04em;line-height:1.5}
-.header-name + .header-name{margin-top:2px}
-.header-sub{font-size:11px;color:var(--teal-pale);letter-spacing:0.25em;text-transform:uppercase;margin-top:4px}
+.header-name{font-family:var(--serif);font-size:17px;color:#fff;font-weight:500;letter-spacing:0.06em;line-height:1.45}
+.header-name + .header-name{margin-top:1px}
+.header-name .loc{font-size:0.72em;opacity:0.82;letter-spacing:0.02em;margin-left:1px}
+.header-sub{font-size:11px;color:var(--teal-pale);letter-spacing:0.25em;text-transform:uppercase;margin-top:5px}
 
 /* Course */
 .course-panel{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 0}
@@ -100,8 +101,8 @@ body{background:var(--bg);color:var(--fg1);font-family:var(--sans);font-size:16p
       <path d="M32 10 C32 24, 30 38, 24 56" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" fill="none"/>
     </svg>
     <div>
-      <div class="header-name">占い日より天満／太宰府</div>
-      <div class="header-name">占い日よりLEMURA／久留米</div>
+      <div class="header-name">占い日より天満<span class="loc">／太宰府</span></div>
+      <div class="header-name">占い日よりLEMURA<span class="loc">／久留米</span></div>
       <div class="header-sub">空き状況</div>
     </div>
   </div>
@@ -151,8 +152,8 @@ body{background:var(--bg);color:var(--fg1);font-family:var(--sans);font-size:16p
 
 <footer class="site-footer">
   <div class="wrap">
-    占い日より天満／太宰府<br>
-    占い日よりLEMURA／久留米
+    占い日より天満<span style="font-size:0.78em;opacity:0.82">／太宰府</span><br>
+    占い日よりLEMURA<span style="font-size:0.78em;opacity:0.82">／久留米</span>
   </div>
 </footer>
 
