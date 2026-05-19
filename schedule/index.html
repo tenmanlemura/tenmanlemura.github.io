@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>空き状況 — 占い日より天満</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:#2BB1C7; --teal2:#1E9AAF; --teal-lt:#5BC5D4;
+  --teal-pale:#B6E4EA; --teal-bg:#EAF2F5;
+  --bg:#F5FAFB; --bgMist:#DCE8EB; --surface:#FFFFFF;
+  --fg1:#333; --fg2:#667077; --fg3:#9AA5AB; --border:#E3E8EC;
+  --serif:'Shippori Mincho',serif;
+  --sans:'Noto Sans JP',-apple-system,sans-serif;
+  --mono:'JetBrains Mono','SF Mono',Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg1);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+
+.wrap{width:100%;max-width:560px;margin:0 auto;padding:0 12px}
+
+/* Header */
+.site-header{background:var(--teal);padding:18px 0}
+.header-inner{display:flex;align-items:center;gap:12px;padding:0 16px}
+.header-name{font-family:var(--serif);font-size:18px;color:#fff;font-weight:500;letter-spacing:0.08em}
+.header-sub{font-size:11px;color:var(--teal-pale);letter-spacing:0.25em;text-transform:uppercase;margin-top:1px}
+
+/* Course */
+.course-panel{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 0}
+.course-title{font-size:11px;letter-spacing:0.25em;color:var(--teal2);font-weight:500;text-align:center;margin-bottom:10px}
+.course-list{display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+.course-item{display:flex;align-items:baseline;gap:8px}
+.course-time{font-family:var(--serif);font-size:16px;color:var(--fg1);font-weight:500}
+.course-price{font-size:13px;color:var(--fg2)}
+
+/* Legend */
+.legend{padding:14px 0 14px;display:flex;justify-content:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--fg2)}
+.legend-item{display:inline-flex;align-items:center;gap:5px}
+.legend-icon{font-family:var(--serif);font-weight:700;font-size:14px}
+.legend-icon.open{color:var(--teal2)}
+.legend-icon.none{color:#7A858B;font-weight:400;font-size:13px}
+
+/* Week nav */
+.week-nav{padding:4px 0 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.week-nav .label{flex:1;text-align:center;font-family:var(--serif);font-size:17px;color:var(--teal2);font-weight:500;letter-spacing:0.04em}
+.nav-btn{flex-shrink:0;background:transparent;border:none;color:var(--teal2);padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.nav-btn:disabled{color:var(--fg3);cursor:not-allowed}
+.today-btn{flex-shrink:0;background:var(--teal-bg);border:1px solid var(--teal-lt);color:var(--teal2);padding:5px 12px;border-radius:999px;font-size:11px;font-weight:500;cursor:pointer}
+
+/* Grid */
+.cal-wrap{padding:0 0 28px}
+.cal{border:1px solid var(--border);border-radius:6px;background:var(--surface);min-height:200px}
+
+.cal-head{display:grid;grid-template-columns:38px repeat(7,1fr);background:var(--bgMist);position:sticky;top:0;z-index:5;border-top-left-radius:5px;border-top-right-radius:5px;box-shadow:0 1px 0 var(--border)}
+.cal-head-time{padding:8px 1px;text-align:center;font-size:10px;color:var(--fg2);border-right:1px solid var(--border);line-height:1.2}
+.cal-head-day{padding:6px 2px;text-align:center;line-height:1.25;border-right:1px solid var(--border);font-size:11px;color:var(--fg2)}
+.cal-head-day:last-child{border-right:none}
+.cal-head-day .d-num{font-weight:700;font-size:13px;color:var(--fg1);display:block}
+.cal-head-day .d-wd{font-size:10px;display:block;margin-top:1px}
+.cal-head-day .d-wd.sun{color:#EF4444}
+.cal-head-day .d-wd.sat{color:#3B82F6}
+.cal-head-day.is-today .d-num{color:var(--teal);text-decoration:underline;text-underline-offset:2px}
+.cal-head-day .store-badge{display:inline-block;margin-top:2px;font-size:9px;font-weight:700;color:#fff;background:var(--teal2);border-radius:3px;padding:1px 5px;line-height:1.4}
+.cal-head-day .closed-badge{display:inline-block;margin-top:2px;font-size:9px;color:var(--fg3);line-height:1.4}
+.cal-head-day .event-badge{display:inline-block;margin-top:2px;font-size:9px;font-weight:700;color:#fff;background:#7A5AB0;border-radius:3px;padding:1px 5px;line-height:1.4}
+
+.cal-row{display:grid;grid-template-columns:38px repeat(7,1fr);border-top:1px solid var(--border)}
+.cal-row.alt{background:var(--bg)}
+.cal-time{padding:11px 1px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--fg2);font-weight:500;border-right:1px solid var(--border)}
+.cal-cell{padding:11px 0;text-align:center;font-family:var(--serif);font-size:15px;font-weight:700;border-right:1px solid var(--border);line-height:1}
+.cal-cell:last-child{border-right:none}
+.cal-cell.open{color:var(--teal2)}
+.cal-cell.none{color:#7A858B;font-weight:400;font-size:13px}
+
+.event-name-bar{padding:10px 14px;background:#F5F0FB;color:#5C3D9A;font-size:12px;text-align:center;border-top:1px solid #E8DCF2}
+
+/* Loading / Error */
+.status-bar{padding:32px 16px;text-align:center;font-size:13px;color:var(--fg2)}
+.status-bar.error{color:#B45A5A}
+.status-bar .retry-btn{margin-top:10px;background:var(--teal-bg);border:1px solid var(--teal-lt);color:var(--teal2);padding:6px 16px;border-radius:999px;font-size:12px;cursor:pointer;font-family:inherit}
+
+/* Note / footer */
+.note-bar{background:var(--teal-bg);border-top:1px solid var(--border);padding:18px 0;margin-top:8px}
+.note-inner{font-size:13px;color:var(--fg2);line-height:1.85;text-align:center}
+.note-inner strong{color:var(--teal2)}
+.site-footer{text-align:center;padding:22px 0 32px;font-size:12px;color:var(--fg3)}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <svg width="30" height="30" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <path d="M32 10 C18 20, 16 38, 24 56 C38 52, 50 40, 50 22 C44 16, 38 11, 32 10 Z" fill="rgba(255,255,255,0.88)"/>
+      <path d="M32 10 C32 24, 30 38, 24 56" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" fill="none"/>
+    </svg>
+    <div>
+      <div class="header-name">占い日より天満／LEMURA</div>
+      <div class="header-sub">空き状況</div>
+    </div>
+  </div>
+</header>
+
+<section class="course-panel" aria-label="鑑定コース">
+  <div class="wrap">
+    <div class="course-title">鑑定コース</div>
+    <div class="course-list" id="courseList">
+      <div class="course-item"><span class="course-time">40分</span><span class="course-price">¥6,000</span></div>
+      <div class="course-item"><span class="course-time">60分</span><span class="course-price">¥9,000</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="legend" aria-label="記号の意味">
+    <span class="legend-item"><span class="legend-icon open">◎</span> 空きあり</span>
+    <span class="legend-item"><span class="legend-icon none">×</span> 予約不可</span>
+    <span class="legend-item">田 = 田主丸店 / 太 = 太宰府店</span>
+  </div>
+
+  <nav class="week-nav" aria-label="週ナビゲーション">
+    <button class="nav-btn" id="btnPrev">◀ 前の週</button>
+    <span class="label" id="weekLabel"></span>
+    <button class="today-btn" id="btnToday">今週</button>
+    <button class="nav-btn" id="btnNext">次の週 ▶</button>
+  </nav>
+
+  <div class="cal-wrap">
+    <div class="cal" id="cal" role="table" aria-label="空き状況カレンダー">
+      <div class="status-bar" id="statusBar">読み込み中…</div>
+    </div>
+    <div id="eventBars"></div>
+  </div>
+</div>
+
+<div class="note-bar">
+  <div class="wrap">
+    <p class="note-inner">
+      この画面は空き状況の確認のみできます。<br>
+      ご予約は <strong>LINE公式アカウント</strong> からお問い合わせください。<br>
+      お名前・希望日時・店舗を一緒にお送りいただくとスムーズです。
+    </p>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">占い日より天満／LEMURA</div>
+</footer>
+
+<script>
+// ── 設定 ─────────────────────────────────────────────
+// GAS Web App の Web App URL（/exec で終わるもの）を yuko が本番化時に書き換える。
+// 暫定値は dev 環境のもの。
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycby5MoObvujeXpiSmS-6KW4ABVP3T2zvu9BHHNEWOSGdGAf3BypNALW0r5CD3yBjSnPoJg/exec";
+
+const STORE_LABELS = { tanushimaru:"田主丸", dazaifu:"太宰府" };
+const STORE_SHORT  = { tanushimaru:"田",    dazaifu:"太" };
+const WDAYS = ["日","月","火","水","木","金","土"];
+
+// ── ユーティリティ ─────────────────────────────────
+function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+function weekMonday(d){const r=new Date(d);const day=r.getDay();r.setDate(r.getDate()-(day===0?6:day-1));r.setHours(0,0,0,0);return r;}
+function fmtWeek(mon){const sun=new Date(mon);sun.setDate(sun.getDate()+6);const y=mon.getFullYear();const m1=mon.getMonth()+1,d1=mon.getDate();const m2=sun.getMonth()+1,d2=sun.getDate();return m1===m2?`${y}年${m1}月${d1}日〜${d2}日`:`${y}年${m1}月${d1}日〜${m2}月${d2}日`;}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+
+// ── JSONP 取得（CORS 回避） ───────────────────────
+// callback 名はランダムにし、衝突回避。timeout 8 秒。
+function fetchAvailability(weekStartKey) {
+  return new Promise((resolve, reject) => {
+    const cbName = "jsonp_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
+    const tag = document.createElement("script");
+    let settled = false;
+    const cleanup = () => {
+      if (tag.parentNode) tag.parentNode.removeChild(tag);
+      delete window[cbName];
+    };
+    const timeoutId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error("timeout"));
+    }, 8000);
+
+    window[cbName] = (data) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      cleanup();
+      resolve(data);
+    };
+
+    tag.onerror = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      cleanup();
+      reject(new Error("network"));
+    };
+
+    const qs = `?path=api/availability&date=${encodeURIComponent(weekStartKey)}&callback=${cbName}`;
+    tag.src = GAS_API_URL + qs;
+    document.body.appendChild(tag);
+  });
+}
+
+// ── レンダリング ────────────────────────────────────
+let weekStart = weekMonday(new Date());
+let currentDays = {}; // weekStartKey → { day_status, location_code, slots, ... }
+let coursesCache = null;
+
+function showStatus(msg, isError) {
+  document.getElementById("cal").innerHTML =
+    `<div class="status-bar${isError ? " error" : ""}">${escapeHtml(msg)}` +
+    (isError ? `<br><button class="retry-btn" onclick="loadAndRender()">再試行</button>` : "") +
+    `</div>`;
+  document.getElementById("eventBars").innerHTML = "";
+}
+
+function renderCourses(courses) {
+  if (!courses || !courses.length) return;
+  const html = courses.map(c =>
+    `<div class="course-item"><span class="course-time">${escapeHtml(String(c.duration_min))}分</span>` +
+    `<span class="course-price">¥${Number(c.price).toLocaleString("ja-JP")}</span></div>`
+  ).join("");
+  document.getElementById("courseList").innerHTML = html;
+}
+
+function buildTimeAxis(days) {
+  // days[].slots から開始時刻の和集合を取り、時刻順にソート
+  const set = new Set();
+  days.forEach(({ data }) => {
+    if (!data || !data.slots) return;
+    data.slots.forEach(s => set.add(s.start));
+  });
+  return Array.from(set).sort();
+}
+
+function render() {
+  const todayKey = dateKey(new Date());
+  document.getElementById("weekLabel").textContent = fmtWeek(weekStart);
+
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + i);
+    const key = dateKey(d);
+    days.push({ key, date: d, data: currentDays[key] || null });
+  }
+
+  const times = buildTimeAxis(days);
+  if (times.length === 0) {
+    showStatus("この週の営業時間帯が設定されていません", false);
+    return;
+  }
+
+  let html = `<div class="cal-head">`;
+  html += `<div class="cal-head-time">時間</div>`;
+  days.forEach(({ key, date, data }) => {
+    const wd = date.getDay();
+    const wdCls = wd === 0 ? "sun" : wd === 6 ? "sat" : "";
+    const isToday = key === todayKey;
+    const todayCls = isToday ? " is-today" : "";
+
+    let badge = "";
+    if (data) {
+      if (data.day_status === "closed_weekday") {
+        badge = `<span class="closed-badge">休</span>`;
+      } else if (data.day_status === "event") {
+        badge = `<span class="event-badge">イベント</span>`;
+      } else if (data.location_code) {
+        badge = `<span class="store-badge">${STORE_SHORT[data.location_code] || ""}</span>`;
+      }
+    }
+
+    html += `<div class="cal-head-day${todayCls}">
+      <span class="d-num">${date.getDate()}</span>
+      <span class="d-wd ${wdCls}">(${WDAYS[wd]})</span>
+      ${badge}
+    </div>`;
+  });
+  html += `</div>`;
+
+  times.forEach((t, ti) => {
+    const altCls = ti % 2 === 1 ? " alt" : "";
+    html += `<div class="cal-row${altCls}">`;
+    html += `<div class="cal-time">${escapeHtml(t)}</div>`;
+    days.forEach(({ data }) => {
+      if (!data || data.day_status === "closed_weekday" || data.day_status === "event") {
+        html += `<div class="cal-cell none">×</div>`;
+        return;
+      }
+      const slot = (data.slots || []).find(s => s.start === t);
+      if (!slot) {
+        html += `<div class="cal-cell none">×</div>`;
+      } else if (slot.status === "open") {
+        html += `<div class="cal-cell open">◎</div>`;
+      } else {
+        html += `<div class="cal-cell none">×</div>`;
+      }
+    });
+    html += `</div>`;
+  });
+
+  document.getElementById("cal").innerHTML = html;
+
+  const evBars = document.getElementById("eventBars");
+  evBars.innerHTML = "";
+  const events = days.filter(d => d.data && d.data.day_status === "event" && d.data.event_name);
+  const seen = new Set();
+  events.forEach(({ data }) => {
+    if (seen.has(data.event_name)) return;
+    seen.add(data.event_name);
+    const bar = document.createElement("div");
+    bar.className = "event-name-bar";
+    const venue = data.event_venue ? `（${escapeHtml(data.event_venue)}）` : "";
+    bar.innerHTML = `<strong>イベント出店：</strong>${escapeHtml(data.event_name)}${venue}`;
+    evBars.appendChild(bar);
+  });
+}
+
+async function loadAndRender() {
+  showStatus("読み込み中…", false);
+  const weekKey = dateKey(weekStart);
+  try {
+    const resp = await fetchAvailability(weekKey);
+    if (!resp || resp.ok === false) {
+      const errMsg = (resp && resp.error) ? resp.error : "サーバーから応答がありません";
+      showStatus("エラー：" + errMsg, true);
+      return;
+    }
+    currentDays = {};
+    (resp.days || []).forEach(d => { currentDays[d.date] = d; });
+    if (resp.courses) {
+      coursesCache = resp.courses;
+      renderCourses(resp.courses);
+    }
+    render();
+  } catch (err) {
+    const reason = err && err.message ? err.message : "unknown";
+    showStatus("通信エラー（" + reason + "）。電波状況をご確認ください。", true);
+  }
+}
+
+document.getElementById("btnPrev").addEventListener("click", () => {
+  weekStart.setDate(weekStart.getDate() - 7); loadAndRender();
+});
+document.getElementById("btnNext").addEventListener("click", () => {
+  weekStart.setDate(weekStart.getDate() + 7); loadAndRender();
+});
+document.getElementById("btnToday").addEventListener("click", () => {
+  weekStart = weekMonday(new Date()); loadAndRender();
+});
+
+loadAndRender();
+</script>
+</body>
+</html>
