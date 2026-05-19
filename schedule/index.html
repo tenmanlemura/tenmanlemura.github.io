@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>空き状況 — 占い日より天満</title>
+<title>空き状況 — 占い日より天満／太宰府・占い日よりLEMURA／久留米</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;500;700&display=swap" rel="stylesheet">
@@ -26,8 +26,10 @@ body{background:var(--bg);color:var(--fg1);font-family:var(--sans);font-size:16p
 /* Header */
 .site-header{background:var(--teal);padding:18px 0}
 .header-inner{display:flex;align-items:center;gap:12px;padding:0 16px}
-.header-name{font-family:var(--serif);font-size:18px;color:#fff;font-weight:500;letter-spacing:0.08em}
-.header-sub{font-size:11px;color:var(--teal-pale);letter-spacing:0.25em;text-transform:uppercase;margin-top:1px}
+.header-name{font-family:var(--serif);font-size:17px;color:#fff;font-weight:500;letter-spacing:0.06em;line-height:1.45}
+.header-name + .header-name{margin-top:1px}
+.header-name .loc{font-size:0.72em;opacity:0.82;letter-spacing:0.02em;margin-left:1px}
+.header-sub{font-size:11px;color:var(--teal-pale);letter-spacing:0.25em;text-transform:uppercase;margin-top:5px}
 
 /* Course */
 .course-panel{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 0}
@@ -99,7 +101,8 @@ body{background:var(--bg);color:var(--fg1);font-family:var(--sans);font-size:16p
       <path d="M32 10 C32 24, 30 38, 24 56" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" fill="none"/>
     </svg>
     <div>
-      <div class="header-name">占い日より天満／LEMURA</div>
+      <div class="header-name">占い日より天満<span class="loc">／太宰府</span></div>
+      <div class="header-name">占い日よりLEMURA<span class="loc">／久留米</span></div>
       <div class="header-sub">空き状況</div>
     </div>
   </div>
@@ -148,7 +151,10 @@ body{background:var(--bg);color:var(--fg1);font-family:var(--sans);font-size:16p
 </div>
 
 <footer class="site-footer">
-  <div class="wrap">占い日より天満／LEMURA</div>
+  <div class="wrap">
+    占い日より天満<span style="font-size:0.78em;opacity:0.82">／太宰府</span><br>
+    占い日よりLEMURA<span style="font-size:0.78em;opacity:0.82">／久留米</span>
+  </div>
 </footer>
 
 <script>
