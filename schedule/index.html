@@ -183,7 +183,7 @@ function fetchAvailability(weekStartKey) {
       settled = true;
       cleanup();
       reject(new Error("timeout"));
-    }, 8000);
+    }, 20000);
 
     window[cbName] = (data) => {
       if (settled) return;
