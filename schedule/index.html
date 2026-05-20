@@ -6,6 +6,8 @@
 <title>空き状況 — 占い日より天満／太宰府・占い日よりLEMURA／久留米</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -173,9 +175,55 @@ function weekMonday(d){const r=new Date(d);const day=r.getDay();r.setDate(r.getD
 function fmtWeek(mon){const sun=new Date(mon);sun.setDate(sun.getDate()+6);const y=mon.getFullYear();const m1=mon.getMonth()+1,d1=mon.getDate();const m2=sun.getMonth()+1,d2=sun.getDate();return m1===m2?`${y}年${m1}月${d1}日〜${d2}日`:`${y}年${m1}月${d1}日〜${m2}月${d2}日`;}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 
-// ── JSONP 取得（CORS 回避） ───────────────────────
-// callback 名はランダムにし、衝突回避。timeout 8 秒。
-function fetchAvailability(weekStartKey) {
+// ── 空き状況取得（3 段 fallback） ───────────────────
+// (1) GitHub Pages 上の静的 JSON（同一 origin・数十 ms 目標）
+// (2) localStorage stale（24h 以内なら一旦表示 + 裏で GAS 再取得）
+// (3) GAS JSONP（最終 fallback・cache hit でも 3-4s）
+const STATIC_JSON_BASE = "./data/weeks";
+const LOCAL_CACHE_PREFIX = "tenman:availability:v1:";
+const LOCAL_CACHE_MAX_AGE_MS = 86400000; // 24h
+
+async function fetchAvailability(weekStartKey) {
+  const t0 = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+
+  // (1) 静的 JSON を優先取得
+  try {
+    const url = `${STATIC_JSON_BASE}/${encodeURIComponent(weekStartKey)}.json?v=${Date.now()}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (res.ok) {
+      const data = await res.json();
+      try { localStorage.setItem(LOCAL_CACHE_PREFIX + weekStartKey, JSON.stringify({ data: data, fetchedAt: Date.now() })); } catch (e) {}
+      try { console.log(`[perf] static JSON ${weekStartKey}: ${Math.round((((typeof performance!=="undefined"&&performance.now)?performance.now():Date.now())-t0))}ms`); } catch(e) {}
+      return data;
+    }
+  } catch (e) { /* fall through */ }
+
+  // (2) localStorage stale fallback（24h 以内なら一旦表示・裏で GAS 再取得して cache 更新）
+  try {
+    const cached = localStorage.getItem(LOCAL_CACHE_PREFIX + weekStartKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.fetchedAt && (Date.now() - parsed.fetchedAt) < LOCAL_CACHE_MAX_AGE_MS) {
+        // 裏で GAS を呼んで cache 更新（fire-and-forget・例外無視）
+        fetchFromGASJsonp(weekStartKey).then(fresh => {
+          try { localStorage.setItem(LOCAL_CACHE_PREFIX + weekStartKey, JSON.stringify({ data: fresh, fetchedAt: Date.now() })); } catch (e) {}
+        }).catch(() => {});
+        try { console.log(`[perf] localStorage stale ${weekStartKey}: ${Math.round((((typeof performance!=="undefined"&&performance.now)?performance.now():Date.now())-t0))}ms (revalidating)`); } catch(e) {}
+        return parsed.data;
+      }
+    }
+  } catch (e) { /* fall through */ }
+
+  // (3) GAS JSONP fallback
+  try { console.log(`[perf] falling back to GAS JSONP for ${weekStartKey}`); } catch(e) {}
+  const fresh = await fetchFromGASJsonp(weekStartKey);
+  try { localStorage.setItem(LOCAL_CACHE_PREFIX + weekStartKey, JSON.stringify({ data: fresh, fetchedAt: Date.now() })); } catch (e) {}
+  try { console.log(`[perf] GAS JSONP ${weekStartKey}: ${Math.round((((typeof performance!=="undefined"&&performance.now)?performance.now():Date.now())-t0))}ms`); } catch(e) {}
+  return fresh;
+}
+
+// 既存の JSONP 取得（CORS 回避）。fallback として保持。
+function fetchFromGASJsonp(weekStartKey) {
   return new Promise((resolve, reject) => {
     const cbName = "jsonp_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
     const tag = document.createElement("script");

@@ -1,0 +1,91 @@
+name: Update availability JSON
+
+on:
+  schedule:
+    # 5 分毎の補強更新（repository_dispatch 失敗時のセーフティネット）
+    - cron: '*/5 * * * *'
+  repository_dispatch:
+    types: [update-availability]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-availability
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute start_monday (JST)
+        id: monday
+        run: |
+          # GNU date / BSD date 両対応で JST 今週月曜を計算
+          if date -d "now" +%Y-%m-%d > /dev/null 2>&1; then
+            # GNU date
+            START_MONDAY=$(TZ=Asia/Tokyo date -d "this monday" +%Y-%m-%d 2>/dev/null \
+              || TZ=Asia/Tokyo date -d "last monday" +%Y-%m-%d)
+          else
+            # BSD date (macOS)
+            START_MONDAY=$(TZ=Asia/Tokyo date -v -Mon +%Y-%m-%d)
+          fi
+          echo "start_monday=${START_MONDAY}" >> "$GITHUB_OUTPUT"
+          echo "Computed start_monday: ${START_MONDAY}"
+
+      - name: Fetch availability from GAS export API
+        env:
+          GAS_DEPLOYMENT_ID: AKfycby5MoObvujeXpiSmS-6KW4ABVP3T2zvu9BHHNEWOSGdGAf3BypNALW0r5CD3yBjSnPoJg
+          START_MONDAY: ${{ steps.monday.outputs.start_monday }}
+        run: |
+          set -e
+          mkdir -p schedule/data/weeks
+          URL="https://script.google.com/macros/s/${GAS_DEPLOYMENT_ID}/exec?path=api/availability-export&start_monday=${START_MONDAY}&count=8"
+          echo "GET ${URL}"
+          # -L で 302 redirect 追従、-f で HTTP エラー時に exit
+          curl -sLf --max-time 60 "${URL}" -o /tmp/export.json
+          echo "Fetched $(wc -c < /tmp/export.json) bytes"
+          # 簡易 sanity check：ok=true かつ weeks 配列が存在すること
+          if ! jq -e '.ok == true and (.weeks | length > 0)' /tmp/export.json > /dev/null; then
+            echo "ERROR: invalid response from GAS export API"
+            cat /tmp/export.json
+            exit 1
+          fi
+
+      - name: Split into week files
+        run: |
+          set -e
+          GENERATED_AT=$(jq -r '.generated_at' /tmp/export.json)
+          SOURCE_VERSION=$(jq -r '.source_version' /tmp/export.json)
+          echo "generated_at=${GENERATED_AT}  source_version=${SOURCE_VERSION}"
+          # weeks 配列を 1 週ずつ取り出し、generated_at / source_version を付与して個別 JSON に保存
+          jq -c '.weeks[]' /tmp/export.json | while read -r week; do
+            week_start=$(echo "$week" | jq -r '.week_start')
+            if [[ -z "$week_start" || "$week_start" == "null" ]]; then
+              echo "WARN: skip week with empty week_start"
+              continue
+            fi
+            echo "$week" | jq \
+              --arg ga "$GENERATED_AT" \
+              --arg sv "$SOURCE_VERSION" \
+              '. + {generated_at: $ga, source_version: $sv}' \
+              > "schedule/data/weeks/${week_start}.json"
+            echo "  wrote schedule/data/weeks/${week_start}.json"
+          done
+
+      - name: Commit and push if changed
+        run: |
+          if [[ -z "$(git status --porcelain schedule/data/weeks/)" ]]; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add schedule/data/weeks/
+          git commit -m "data: update availability $(TZ=Asia/Tokyo date +%Y-%m-%dT%H:%M%z)"
+          git push
