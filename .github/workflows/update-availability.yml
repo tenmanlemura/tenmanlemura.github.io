@@ -5,7 +5,9 @@ on:
     # 5 分毎の補強更新（repository_dispatch 失敗時のセーフティネット）
     - cron: '*/5 * * * *'
   repository_dispatch:
-    types: [update-availability]
+    # update-availability: 旧 ApiHandlers.gs triggerGitHubPagesUpdate（client_payload.revision なし・M1 移行中残置）
+    # firestore-update:    新 DispatchEndpoint.gs / Watchdog.gs（client_payload.revision あり・publish 完了通知発火）
+    types: [update-availability, firestore-update]
   workflow_dispatch:
 
 permissions:
@@ -15,6 +17,11 @@ concurrency:
   group: update-availability
   cancel-in-progress: false
 
+env:
+  # repository_dispatch (firestore-update) から渡される publish revision。
+  # cron / workflow_dispatch / repository_dispatch[update-availability] 経由では空文字列。
+  PUBLISH_REVISION: ${{ github.event.client_payload.revision }}
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -22,6 +29,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate revision (firestore-update only)
+        if: github.event_name == 'repository_dispatch' && github.event.action == 'firestore-update'
+        run: |
+          if [ -z "${PUBLISH_REVISION}" ] || [ "${PUBLISH_REVISION}" = "null" ]; then
+            echo "ERROR: client_payload.revision missing for firestore-update event" >&2
+            exit 1
+          fi
+          if ! [[ "${PUBLISH_REVISION}" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ERROR: client_payload.revision is not a positive integer: ${PUBLISH_REVISION}" >&2
+            exit 1
+          fi
+          echo "Validated PUBLISH_REVISION=${PUBLISH_REVISION}"
 
       - name: Compute start_monday (JST)
         id: monday
@@ -89,3 +109,32 @@ jobs:
           git add schedule/data/weeks/
           git commit -m "data: update availability $(TZ=Asia/Tokyo date +%Y-%m-%dT%H:%M%z)"
           git push
+
+      - name: Notify GAS of publish completion (firestore-update only)
+        # PUBLISH_REVISION が空でない時のみ発火。cron / workflow_dispatch / [update-availability] では skip。
+        # secrets 未設定時は WARN 出して skip（M1 yuko prep 完了前のセーフガード）。
+        if: env.PUBLISH_REVISION != '' && env.PUBLISH_REVISION != 'null'
+        env:
+          GAS_PUBLISH_NOTIFY_URL: ${{ secrets.GAS_PUBLISH_NOTIFY_URL }}
+          GAS_WEBHOOK_SECRET: ${{ secrets.GAS_WEBHOOK_SECRET }}
+        run: |
+          set +e
+          if [ -z "$GAS_PUBLISH_NOTIFY_URL" ] || [ -z "$GAS_WEBHOOK_SECRET" ]; then
+            echo "WARN: GAS_PUBLISH_NOTIFY_URL or GAS_WEBHOOK_SECRET not configured; skipping notify"
+            exit 0
+          fi
+          PUBLISHED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          BODY=$(jq -nc --argjson rev "${PUBLISH_REVISION}" --arg at "${PUBLISHED_AT}" \
+            '{publishedRevision: $rev, publishedAt: $at}')
+          HTTP_CODE=$(curl -sL -o /tmp/notify-response.json -w "%{http_code}" \
+            --max-time 30 \
+            -X POST "${GAS_PUBLISH_NOTIFY_URL}?secret=${GAS_WEBHOOK_SECRET}" \
+            -H "Content-Type: application/json" \
+            --data "${BODY}")
+          echo "GAS publishComplete: HTTP ${HTTP_CODE}"
+          cat /tmp/notify-response.json 2>/dev/null || true
+          echo
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "ERROR: GAS publishComplete returned HTTP ${HTTP_CODE}" >&2
+            exit 1
+          fi
