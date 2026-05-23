@@ -1,0 +1,118 @@
+import {
+  collection,
+  doc,
+  runTransaction,
+  serverTimestamp,
+  setDoc,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { db, auth } from "./app.js";
+import { assertNotDegraded } from "./degraded.js";
+
+export async function commitWrite({ op, domain, inverse, target, dispatchSource }) {
+  assertNotDegraded();
+
+  const user = auth.currentUser;
+  if (!user) throw new Error("not authenticated");
+
+  let newRevision;
+  await runTransaction(db, async (tx) => {
+    const stateRef = doc(db, "publish_state/current");
+    const stateSnap = await tx.get(stateRef);
+    const currentRev = (stateSnap.exists() ? stateSnap.data().publishRevision : 0) || 0;
+    newRevision = currentRev + 1;
+
+    const common4 = {
+      schema_version: 1,
+      written_by: "admin_spa",
+      written_at: serverTimestamp(),
+      source_revision: newRevision,
+    };
+
+    const domainRef = doc(db, `${domain.collection}/${domain.docId}`);
+    if (domain.action === "set") {
+      tx.set(domainRef, { ...domain.data, ...common4 });
+    } else if (domain.action === "update") {
+      tx.update(domainRef, { ...domain.data, ...common4 });
+    } else if (domain.action === "delete") {
+      tx.delete(domainRef);
+    } else {
+      throw new Error(`unsupported domain action: ${domain.action}`);
+    }
+
+    const logRef = doc(collection(db, "admin_log"));
+    tx.set(logRef, {
+      actor: user.email || user.uid,
+      action: op,
+      target,
+      timestamp: serverTimestamp(),
+      inverse_operation: inverse,
+      ...common4,
+    });
+
+    if (stateSnap.exists()) {
+      tx.update(stateRef, { publishRevision: newRevision });
+    } else {
+      tx.set(stateRef, {
+        publishRevision: newRevision,
+        lastDispatchAt: null,
+        lastDispatchedRevision: 0,
+        lastPublishedRevision: 0,
+        lastPublishedAt: null,
+        lastError: null,
+        consecutiveFailures: 0,
+        ...common4,
+      });
+    }
+  });
+
+  fireDispatch(newRevision, dispatchSource).catch((err) => {
+    console.warn("dispatch fire-and-forget failed:", err);
+  });
+
+  return newRevision;
+}
+
+async function fireDispatch(revision, source) {
+  const url = window.__TENMAN_DISPATCH_URL;
+  if (!url) {
+    console.warn("dispatch URL not configured");
+    return;
+  }
+
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    console.warn("dispatch skipped: user signed out before dispatch");
+    return;
+  }
+
+  const token = await currentUser.getIdToken();
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      source,
+      revision,
+      admin_token: token,
+    }),
+    keepalive: true,
+  });
+}
+
+export async function logSkipOnly({ action, target, reason }) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("not authenticated");
+
+  const logRef = doc(collection(db, "admin_log"));
+  await setDoc(logRef, {
+    schema_version: 1,
+    written_by: "admin_spa",
+    written_at: serverTimestamp(),
+    actor: user.email || user.uid,
+    action,
+    target,
+    reason,
+    timestamp: serverTimestamp(),
+    inverse_operation: {},
+    source_revision: null,
+  });
+}

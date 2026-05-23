@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>管理画面 - 占いサロン予約管理</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body data-page="admin">
+  <div class="auth-gate" id="authGate" role="status" aria-live="polite">
+    認証状態を確認しています
+  </div>
+
+  <div class="app-shell" id="appShell" hidden>
+    <header class="site-header">
+      <div class="wrap header-row">
+        <div class="brand">
+          <p class="brand-kicker">tenman admin</p>
+          <h1>占いサロン予約管理</h1>
+        </div>
+        <div class="header-actions">
+          <span class="user-chip" id="currentUserEmail" aria-label="ログイン中のアカウント"></span>
+          <button type="button" class="btn btn-logout" id="logoutButton">ログアウト</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <div class="alert-banner degraded-banner" id="degraded-banner" hidden role="alert">
+        現在、Firestore 無料枠が上限に近づいているため安全モードに切り替えています。書込操作は明日 00:30 JST 以降に自動復帰します。読込は通常通り利用できます。
+      </div>
+    </div>
+
+    <nav class="tabs" aria-label="管理メニュー">
+      <div class="wrap tab-row" role="tablist">
+        <button type="button" class="tab-btn" id="tab-button-home" data-tab="home" role="tab" aria-controls="tab-home">ホーム</button>
+        <button type="button" class="tab-btn" id="tab-schedule" data-tab="schedule" role="tab" aria-controls="panel-schedule">営業予定</button>
+        <button type="button" class="tab-btn" id="tab-block" data-tab="block" role="tab" aria-controls="panel-block">予約不可</button>
+        <button type="button" class="tab-btn" id="tab-settings" data-tab="settings" role="tab" aria-controls="panel-settings">設定</button>
+      </div>
+    </nav>
+
+    <main class="wrap main-content">
+      <section class="panel tab-panel" id="tab-home" data-tab-panel="home" role="tabpanel" aria-labelledby="tab-button-home">
+        <div class="tab-home-loading" id="homeTabSpinner" role="status">読み込み中...</div>
+      </section>
+
+      <section class="panel" id="panel-schedule" data-tab-panel="schedule" role="tabpanel" aria-labelledby="tab-schedule">
+        <div class="panel-heading">
+          <p class="section-label">Schedule</p>
+          <h2>営業予定</h2>
+        </div>
+        <div class="tab-placeholder">Step 7b で実装</div>
+      </section>
+
+      <section class="panel" id="panel-block" data-tab-panel="block" role="tabpanel" aria-labelledby="tab-block">
+        <div class="panel-heading">
+          <p class="section-label">Blocked time</p>
+          <h2>予約不可</h2>
+        </div>
+        <div class="tab-placeholder">Step 7b で実装</div>
+      </section>
+
+      <section class="panel" id="panel-settings" data-tab-panel="settings" role="tabpanel" aria-labelledby="tab-settings">
+        <div class="panel-heading">
+          <p class="section-label">Settings</p>
+          <h2>設定</h2>
+        </div>
+        <div class="tab-placeholder">Step 7b で実装</div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modalRoot"></div>
+  <script>
+    window.__TENMAN_DISPATCH_URL = "https://script.google.com/macros/s/AKfycby5MoObvujeXpiSmS-6KW4ABVP3T2zvu9BHHNEWOSGdGAf3BypNALW0r5CD3yBjSnPoJg/exec";
+  </script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
