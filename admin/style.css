@@ -695,8 +695,13 @@ button {
   gap: var(--space-2);
 }
 
-.block-row {
-  grid-template-columns: 112px minmax(0, 1fr);
+.detail-row {
+  grid-template-columns: 108px 58px minmax(0, 1fr) auto;
+}
+
+.detail-row.block-row {
+  border-color: rgba(180, 105, 0, 0.22);
+  background: #FFFCF6;
 }
 
 .row-time {
@@ -704,6 +709,34 @@ button {
   font-size: 13px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+.detail-row.block-row .row-time {
+  color: #8B5200;
+}
+
+.row-kind {
+  display: inline-flex;
+  min-width: 0;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 9px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.row-kind.is-reservation {
+  background: rgba(43, 177, 199, 0.14);
+  color: var(--primary-dk);
+}
+
+.row-kind.is-block {
+  background: #FFF0D8;
+  color: #8B5200;
 }
 
 .row-main {
@@ -800,6 +833,10 @@ button {
 
   .row-list-item {
     grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .detail-row {
+    grid-template-columns: 86px 52px minmax(0, 1fr);
   }
 
   .row-actions {

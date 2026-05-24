@@ -8,6 +8,7 @@ import {
   limit,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { cancelReservation, openReservationModal } from "./reservation-modal.js";
+import { commitWrite } from "./write-helpers.js";
 
 const WDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 const STORE_LABELS = {
@@ -30,6 +31,7 @@ let selectedDate = todayKey();
 let monthReservations = [];
 let schedulesByDate = new Map();
 let selectedBlocks = [];
+let selectedBlocksError = "";
 let unsubscribeReservations = null;
 let unsubscribeSchedules = null;
 let unsubscribeSelectedBlocks = null;
@@ -94,12 +96,8 @@ function buildHomeDom(root) {
         </div>
         <div class="detail-grid">
           <div>
-            <h4>予約</h4>
-            <div class="row-list" id="homeSelectedReservationList"></div>
-          </div>
-          <div>
-            <h4>予約不可</h4>
-            <div class="row-list" id="homeSelectedBlockList"></div>
+            <h4>予定</h4>
+            <div class="row-list" id="homeSelectedList"></div>
           </div>
         </div>
       </section>
@@ -196,6 +194,7 @@ function subscribeSelectedBlocks(date) {
   unsubscribeSelectedBlocks?.();
 
   selectedBlocks = [];
+  selectedBlocksError = "";
   unsubscribeSelectedBlocks = onSnapshot(
     query(
       collection(db, "blocks"),
@@ -205,11 +204,13 @@ function subscribeSelectedBlocks(date) {
     ),
     (snapshot) => {
       selectedBlocks = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+      selectedBlocksError = "";
       renderSelectedDetails();
     },
     (error) => {
       console.error("selected blocks listener failed", error);
-      renderError("homeSelectedBlockList", error.message);
+      selectedBlocksError = error.message;
+      renderSelectedDetails();
     },
   );
 }
@@ -301,78 +302,122 @@ function renderSelectedDetails() {
     title.textContent = selectedDate === todayKey() ? "今日の詳細" : `${selectedDate} の詳細`;
   }
 
-  renderReservationList("homeSelectedReservationList", reservationsForDate(selectedDate));
-  renderBlockList("homeSelectedBlockList", selectedBlocks);
+  renderSelectedList("homeSelectedList", reservationsForDate(selectedDate), selectedBlocks);
 }
 
-function renderReservationList(id, reservations) {
+function renderSelectedList(id, reservations, blocks) {
   const list = document.getElementById(id);
   if (!list) return;
 
   list.innerHTML = "";
-  const rows = [...reservations].sort(compareReservationTime);
-  if (rows.length === 0) {
-    list.appendChild(emptyRow("予約なし"));
+  const rows = selectedDetailItems(reservations, blocks);
+  if (rows.length === 0 && !selectedBlocksError) {
+    list.appendChild(emptyRow("予定なし"));
     return;
   }
 
-  rows.forEach((reservation) => {
-    const row = document.createElement("div");
-    row.className = "row-list-item reservation-row";
-
-    const time = document.createElement("span");
-    time.className = "row-time";
-    time.textContent = reservation.start_time || "--:--";
-    row.appendChild(time);
-
-    const main = document.createElement("span");
-    main.className = "row-main";
-    const name = document.createElement("strong");
-    name.textContent = reservation.customer_name || "名前未設定";
-    const meta = document.createElement("span");
-    meta.className = "row-meta";
-    meta.textContent = `${storeLabel(reservation.store_code)} / ${reservation.course_code || "course 未設定"}`;
-    main.appendChild(name);
-    main.appendChild(meta);
-    row.appendChild(main);
-
-    const actions = document.createElement("span");
-    actions.className = "row-actions";
-    actions.appendChild(reservationActionButton("編集", "edit", reservation));
-    actions.appendChild(reservationActionButton("×", "cancel", reservation));
-    row.appendChild(actions);
-
-    list.appendChild(row);
+  rows.forEach((item) => {
+    list.appendChild(item.type === "reservation" ? reservationRow(item.value) : blockRow(item.value));
   });
+
+  if (selectedBlocksError) {
+    list.appendChild(emptyRow(`予約不可の読み込みに失敗しました: ${selectedBlocksError}`));
+  }
 }
 
-function renderBlockList(id, blocks) {
-  const list = document.getElementById(id);
-  if (!list) return;
+function selectedDetailItems(reservations, blocks) {
+  return [
+    ...reservations.map((reservation) => ({
+      type: "reservation",
+      startTime: reservation.start_time || "",
+      endTime: reservation.end_time || "",
+      id: reservation.reservation_id || reservation.id || "",
+      value: reservation,
+    })),
+    ...blocks.map((block) => ({
+      type: "block",
+      startTime: block.start_time || "",
+      endTime: block.end_time || "",
+      id: block.id || "",
+      value: block,
+    })),
+  ].sort(compareSelectedDetailItem);
+}
 
-  list.innerHTML = "";
-  const rows = [...blocks].sort((a, b) => `${a.start_time}${a.id || ""}`.localeCompare(`${b.start_time}${b.id || ""}`));
-  if (rows.length === 0) {
-    list.appendChild(emptyRow("予約不可なし"));
-    return;
-  }
+function compareSelectedDetailItem(a, b) {
+  return detailItemSortKey(a).localeCompare(detailItemSortKey(b));
+}
 
-  rows.forEach((block) => {
-    const row = document.createElement("div");
-    row.className = "row-list-item block-row";
+function detailItemSortKey(item) {
+  const typeRank = item.type === "reservation" ? "0" : "1";
+  return `${item.startTime || "99:99"}${item.endTime || "99:99"}${typeRank}${item.id}`;
+}
 
-    const time = document.createElement("span");
-    time.className = "row-time";
-    time.textContent = `${block.start_time || "--:--"}-${block.end_time || "--:--"}`;
-    row.appendChild(time);
+function reservationRow(reservation) {
+  const row = document.createElement("div");
+  row.className = "row-list-item detail-row reservation-row";
 
-    const main = document.createElement("span");
-    main.className = "row-main";
-    main.textContent = "予約不可";
-    row.appendChild(main);
+  row.appendChild(timeNode(reservation.start_time || "--:--"));
+  row.appendChild(kindBadge("予約", "reservation"));
 
-    list.appendChild(row);
-  });
+  const main = document.createElement("span");
+  main.className = "row-main";
+  const name = document.createElement("strong");
+  name.textContent = reservation.customer_name || "名前未設定";
+  const meta = document.createElement("span");
+  meta.className = "row-meta";
+  meta.textContent = `${storeLabel(reservation.store_code)} / ${reservation.course_code || "course 未設定"}`;
+  main.appendChild(name);
+  main.appendChild(meta);
+  row.appendChild(main);
+
+  const actions = document.createElement("span");
+  actions.className = "row-actions";
+  actions.appendChild(reservationActionButton("編集", "edit", reservation));
+  actions.appendChild(reservationActionButton("×", "cancel", reservation));
+  row.appendChild(actions);
+
+  return row;
+}
+
+function blockRow(block) {
+  const row = document.createElement("div");
+  row.className = "row-list-item detail-row block-row";
+
+  row.appendChild(timeNode(`${block.start_time || "--:--"}-${block.end_time || "--:--"}`));
+  row.appendChild(kindBadge("不可", "block"));
+
+  const main = document.createElement("span");
+  main.className = "row-main";
+  const title = document.createElement("strong");
+  title.textContent = "予約不可";
+  const meta = document.createElement("span");
+  meta.className = "row-meta";
+  meta.textContent = "この時間帯は受付停止";
+  main.appendChild(title);
+  main.appendChild(meta);
+  row.appendChild(main);
+
+  const actions = document.createElement("span");
+  actions.className = "row-actions";
+  actions.appendChild(blockDeleteButton(block));
+  row.appendChild(actions);
+
+  return row;
+}
+
+function timeNode(text) {
+  const time = document.createElement("span");
+  time.className = "row-time";
+  time.textContent = text;
+  return time;
+}
+
+function kindBadge(label, type) {
+  const badge = document.createElement("span");
+  badge.className = `row-kind is-${type}`;
+  badge.textContent = label;
+  return badge;
 }
 
 function reservationActionButton(label, action, reservation) {
@@ -396,6 +441,47 @@ function reservationActionButton(label, action, reservation) {
     } catch (error) {
       console.error("cancel reservation failed", error);
       alert(error.message || "キャンセルに失敗しました");
+      button.disabled = false;
+    }
+  });
+  return button;
+}
+
+function blockDeleteButton(block) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "btn btn-icon-delete";
+  button.textContent = "×";
+  button.title = "削除";
+  button.dataset.write = "true";
+  button.addEventListener("click", async () => {
+    if (!block.id) {
+      alert("削除対象のIDが見つかりません");
+      return;
+    }
+    if (!confirm(`${block.date} ${block.start_time}-${block.end_time} を削除しますか？`)) return;
+
+    button.disabled = true;
+    try {
+      const target = `blocks/${block.id}`;
+      await commitWrite({
+        op: "deleteBlock",
+        domain: {
+          collection: "blocks",
+          docId: block.id,
+          action: "delete",
+        },
+        inverse: {
+          op: "create",
+          target,
+          data: stripId(block),
+        },
+        target,
+        dispatchSource: "admin_block_delete",
+      });
+    } catch (error) {
+      console.error("delete block failed", error);
+      alert(error.message || "削除に失敗しました");
       button.disabled = false;
     }
   });
@@ -434,13 +520,6 @@ function emptyRow(text) {
   return row;
 }
 
-function renderError(id, message) {
-  const list = document.getElementById(id);
-  if (!list) return;
-  list.innerHTML = "";
-  list.appendChild(emptyRow(`エラー: ${message}`));
-}
-
 function setMonthStatus(text) {
   const status = document.getElementById("homeMonthStatus");
   if (status) status.textContent = text;
@@ -460,6 +539,11 @@ function compareReservationTime(a, b) {
 
 function storeLabel(store) {
   return STORE_LABELS[store] || store || "店舗未設定";
+}
+
+function stripId(value) {
+  const { id, ...data } = value;
+  return data;
 }
 
 function todayKey() {
