@@ -19,11 +19,11 @@ const STORE_LABELS = {
   event: "イベント出店",
   both: "両店舗受付中",
 };
-const STORE_SHORT = {
-  tanushimaru: "田",
-  dazaifu: "太",
-  event: "イ",
-  both: "両",
+const STORE_BADGE_LABELS = {
+  tanushimaru: "田主丸",
+  dazaifu: "太宰府",
+  event: "EVENT",
+  both: "両店舗",
 };
 const PLANNED_STORES = [
   ["tanushimaru", "田主丸店"],
@@ -953,7 +953,7 @@ function storeBadge(store) {
   badge.className = "month-badge";
   if (store === "event") badge.classList.add("is-event");
   if (store === "both") badge.classList.add("is-muted");
-  badge.textContent = STORE_SHORT[store] || "両";
+  badge.textContent = STORE_BADGE_LABELS[store] || storeLabel(store);
   badge.title = storeLabel(store);
   return badge;
 }
