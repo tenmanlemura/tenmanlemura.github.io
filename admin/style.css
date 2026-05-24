@@ -1125,8 +1125,24 @@ button {
   color: var(--primary-dk);
 }
 
+.radio-pill:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
 .radio-pill input {
   margin: 0;
+}
+
+.form-note {
+  margin: 0;
+  border: 1px solid rgba(43, 177, 199, 0.22);
+  border-radius: 8px;
+  background: var(--soft-bg);
+  color: var(--primary-dk);
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .form-error {

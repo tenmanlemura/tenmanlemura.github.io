@@ -50,6 +50,7 @@ export function openReservationModal({ mode, presetDate, existing } = {}) {
       <fieldset class="form-fieldset">
         <legend>店舗<em class="form-required" aria-hidden="true">必須</em></legend>
         <div class="radio-row">${radioOptions("store_code", STORE_OPTIONS, initial.store_code)}</div>
+        <p class="form-note" data-store-lock-note hidden></p>
       </fieldset>
       <label class="form-field">
         <span>お名前<em class="form-required" aria-hidden="true">必須</em></span>
@@ -71,6 +72,7 @@ export function openReservationModal({ mode, presetDate, existing } = {}) {
   modal.submitButton.addEventListener("click", () => form.requestSubmit());
   form.addEventListener("input", () => updateEndTime(form));
   form.addEventListener("change", () => updateEndTime(form));
+  setupStoreAvailability(form, isEdit ? existing : null);
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     await submitReservationForm({ form, modal, existing: isEdit ? existing : null });
@@ -78,6 +80,7 @@ export function openReservationModal({ mode, presetDate, existing } = {}) {
 
   updateEndTime(form);
   showModal(modal);
+  refreshStoreAvailability(form);
 }
 
 export async function cancelReservation(id) {
@@ -239,20 +242,49 @@ async function validateReservation(values, currentId) {
 }
 
 async function findReservationCollision(values, currentId) {
+  const reservations = await fetchActiveReservationsForDate(values.visit_date);
+  return reservations.find((item) => {
+    if (isSameReservation(item, currentId)) return false;
+    if (item.store_code !== values.store_code) return true;
+    return timeRangesOverlap(values.start_time, values.end_time, item.start_time, item.end_time);
+  });
+}
+
+async function findStoreLockForDate(visitDate, currentId) {
+  if (!visitDate) return null;
+  const reservations = await fetchActiveReservationsForDate(visitDate);
+  return resolveStoreLock(reservations, currentId);
+}
+
+function resolveStoreLock(reservations, currentId) {
+  const storeCodes = [];
+  for (const item of reservations || []) {
+    if (isSameReservation(item, currentId)) continue;
+    if (!STORE_OPTIONS.some(([value]) => value === item.store_code)) continue;
+    if (!storeCodes.includes(item.store_code)) storeCodes.push(item.store_code);
+  }
+  if (storeCodes.length === 0) return null;
+
+  const storeCode = storeCodes[0];
+  return {
+    store_code: storeCode,
+    label: storeLabel(storeCode),
+  };
+}
+
+async function fetchActiveReservationsForDate(visitDate) {
   const snapshot = await getDocs(
     query(
       collection(db, "reservations"),
-      where("visit_date", "==", values.visit_date),
+      where("visit_date", "==", visitDate),
       where("status", "==", "active"),
     ),
   );
-  return snapshot.docs
-    .map((item) => ({ id: item.id, ...item.data() }))
-    .find((item) => {
-      if (item.id === currentId || item.reservation_id === currentId) return false;
-      if (item.store_code !== values.store_code) return true;
-      return timeRangesOverlap(values.start_time, values.end_time, item.start_time, item.end_time);
-    });
+  return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+}
+
+function isSameReservation(item, currentId) {
+  return Boolean(currentId && (item.id === currentId || item.reservation_id === currentId));
 }
 
 async function findBlockCollision(values) {
@@ -290,6 +322,50 @@ function updateEndTime(form) {
   if (end) end.value = values.end_time || "";
 }
 
+function setupStoreAvailability(form, existing) {
+  form.__storeLockCurrentId = existing?.id || existing?.reservation_id || "";
+  form.__storeLockRequestId = 0;
+  form.elements.visit_date?.addEventListener("change", () => refreshStoreAvailability(form));
+}
+
+async function refreshStoreAvailability(form) {
+  const requestId = (form.__storeLockRequestId || 0) + 1;
+  form.__storeLockRequestId = requestId;
+
+  try {
+    const lock = await findStoreLockForDate(form.elements.visit_date?.value || "", form.__storeLockCurrentId);
+    if (form.__storeLockRequestId !== requestId) return;
+    applyStoreLock(form, lock);
+  } catch (err) {
+    console.error("reservation store availability check failed", err);
+    if (form.__storeLockRequestId !== requestId) return;
+    applyStoreLock(form, null);
+  }
+}
+
+function applyStoreLock(form, lock) {
+  const inputs = [...form.querySelectorAll('input[name="store_code"]')];
+  const lockedStoreCode = lock?.store_code || "";
+  for (const input of inputs) {
+    input.disabled = Boolean(lockedStoreCode && input.value !== lockedStoreCode);
+  }
+
+  if (lockedStoreCode && !inputs.some((input) => input.checked && !input.disabled)) {
+    const allowedInput = inputs.find((input) => input.value === lockedStoreCode);
+    if (allowedInput) allowedInput.checked = true;
+  }
+
+  const note = form.querySelector("[data-store-lock-note]");
+  if (!note) return;
+  if (lockedStoreCode) {
+    note.textContent = `この日は既に${lock.label}の予約があります。他店舗は選択できません。`;
+    note.hidden = false;
+  } else {
+    note.textContent = "";
+    note.hidden = true;
+  }
+}
+
 function timeOptions(selected, includeEnd) {
   const end = includeEnd ? CLOSE_MINUTES : CLOSE_MINUTES - 30;
   let html = "";
@@ -311,6 +387,10 @@ function radioOptions(name, options, selected) {
       `,
     )
     .join("");
+}
+
+function storeLabel(storeCode) {
+  return STORE_OPTIONS.find(([value]) => value === storeCode)?.[1] || storeCode;
 }
 
 function createModal({ title, submitLabel }) {
