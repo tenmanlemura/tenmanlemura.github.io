@@ -1,5 +1,6 @@
 import { signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { auth } from "./app.js";
+import { isDegraded } from "./degraded.js";
 import { executeRedo, executeUndo, getLatestRedoableLog, getLatestUndoableLog } from "./undo.js";
 
 let initialized = false;
@@ -125,13 +126,23 @@ async function refreshUndoRedoButtons() {
   const redoButton = document.getElementById("settingsRedoButton");
   if (!undoButton || !redoButton) return;
 
+  const degraded = isDegraded();
+
   try {
     const [undoLog, redoLog] = await Promise.all([getLatestUndoableLog(), getLatestRedoableLog()]);
-    undoButton.disabled = !undoLog;
-    undoButton.title = undoLog ? `${targetLabel(undoLog)}を元に戻す` : "元に戻せる操作がありません";
-    redoButton.disabled = !redoLog;
-    redoButton.title = redoLog ? `${targetLabel(redoLog)}をやり直す` : "やり直せる操作がありません";
-    setUndoStatus(undoLog ? `最新: ${actionLabel(undoLog.action)} / ${targetLabel(undoLog)}` : "元に戻せる操作がありません");
+    undoButton.disabled = degraded || !undoLog;
+    undoButton.title = degraded
+      ? "安全モード中は操作できません"
+      : (undoLog ? `${targetLabel(undoLog)}を元に戻す` : "元に戻せる操作がありません");
+    redoButton.disabled = degraded || !redoLog;
+    redoButton.title = degraded
+      ? "安全モード中は操作できません"
+      : (redoLog ? `${targetLabel(redoLog)}をやり直す` : "やり直せる操作がありません");
+    setUndoStatus(
+      degraded
+        ? "安全モード中"
+        : (undoLog ? `最新: ${actionLabel(undoLog.action)} / ${targetLabel(undoLog)}` : "元に戻せる操作がありません"),
+    );
   } catch (error) {
     console.error("undo state refresh failed", error);
     undoButton.disabled = true;
