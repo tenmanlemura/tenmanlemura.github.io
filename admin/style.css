@@ -1252,86 +1252,6 @@ button {
   margin-top: var(--space-4);
 }
 
-.settings-note {
-  display: grid;
-  gap: var(--space-2);
-  border: 1px solid rgba(43, 177, 199, 0.2);
-  border-radius: 8px;
-  background: #F0FBFD;
-  padding: var(--space-3);
-}
-
-.settings-note p {
-  margin: 0;
-  color: var(--fg2);
-  font-size: 13px;
-}
-
-.settings-user-list {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.settings-user-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #FFFFFF;
-  padding: var(--space-3);
-}
-
-.settings-user-main {
-  display: grid;
-  min-width: 0;
-  gap: 2px;
-}
-
-.settings-user-main strong,
-.settings-user-main span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.settings-user-main strong {
-  color: var(--fg);
-  font-size: 14px;
-}
-
-.settings-user-main span {
-  color: var(--fg2);
-  font-size: 12px;
-}
-
-.settings-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.settings-badge {
-  display: inline-flex;
-  min-height: 26px;
-  align-items: center;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: #F7FAFB;
-  color: var(--fg2);
-  padding: 4px 9px;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.settings-badge.is-active {
-  border-color: rgba(43, 177, 199, 0.28);
-  background: rgba(43, 177, 199, 0.12);
-  color: var(--primary-dk);
-}
-
 @media (min-width: 720px) {
   .undo-toolbar {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -1348,10 +1268,5 @@ button {
 
   .settings-logout {
     width: auto;
-  }
-
-  .settings-user-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
   }
 }

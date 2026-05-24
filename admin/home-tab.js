@@ -8,7 +8,6 @@ import {
   limit,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { cancelReservation, openReservationModal } from "./reservation-modal.js";
-import { executeRedo, executeUndo, getLatestRedoableLog, getLatestUndoableLog } from "./undo.js";
 
 const WDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 const STORE_LABELS = {
@@ -29,15 +28,11 @@ let built = false;
 let currentMonth = startOfMonth(parseDateKey(todayKey()));
 let selectedDate = todayKey();
 let monthReservations = [];
-let todayReservations = [];
 let schedulesByDate = new Map();
 let selectedBlocks = [];
-let todayBlocks = [];
 let unsubscribeReservations = null;
-let unsubscribeTodayReservations = null;
 let unsubscribeSchedules = null;
 let unsubscribeSelectedBlocks = null;
-let unsubscribeTodayBlocks = null;
 
 export function initHomeTab() {
   const root = document.getElementById("tab-home");
@@ -50,33 +45,24 @@ export function initHomeTab() {
 
   if (initialized) {
     renderHome();
-    refreshUndoRedoButtons();
     return;
   }
 
   initialized = true;
   setupMonthButtons();
   setupWriteButtons();
-  setupUndoRedoButtons();
   subscribeMonthData();
-  subscribeTodayReservations();
-  subscribeTodayBlocks();
   subscribeSelectedBlocks(selectedDate);
   renderHome();
-  refreshUndoRedoButtons();
 }
 
 export function teardownHomeTab() {
   unsubscribeReservations?.();
-  unsubscribeTodayReservations?.();
   unsubscribeSchedules?.();
   unsubscribeSelectedBlocks?.();
-  unsubscribeTodayBlocks?.();
   unsubscribeReservations = null;
-  unsubscribeTodayReservations = null;
   unsubscribeSchedules = null;
   unsubscribeSelectedBlocks = null;
-  unsubscribeTodayBlocks = null;
   initialized = false;
 }
 
@@ -117,36 +103,6 @@ function buildHomeDom(root) {
           </div>
         </div>
       </section>
-
-      <section class="detail-shell" aria-labelledby="homeTodayTitle">
-        <div class="section-subhead">
-          <p class="section-label">Today</p>
-          <h3 id="homeTodayTitle">今日の予約</h3>
-        </div>
-        <div class="detail-grid">
-          <div>
-            <h4>確定予約</h4>
-            <div class="row-list" id="homeTodayReservationList"></div>
-          </div>
-          <div>
-            <h4>予約不可</h4>
-            <div class="row-list" id="homeTodayBlockList"></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="undo-toolbar" aria-labelledby="homeUndoTitle">
-        <div>
-          <p class="section-label">History</p>
-          <h3 id="homeUndoTitle">操作履歴</h3>
-          <p class="undo-toolbar-note" id="homeUndoStatus">履歴を確認しています</p>
-        </div>
-        <div class="undo-toolbar-actions">
-          <button type="button" class="btn btn-secondary btn-compact" id="homeUndoButton" data-write="true" disabled>直前の操作を元に戻す</button>
-          <button type="button" class="btn btn-secondary btn-compact" id="homeRedoButton" data-write="true" disabled>やり直し</button>
-        </div>
-        <div class="undo-toast" id="homeUndoToast" role="status" aria-live="polite" hidden></div>
-      </section>
     </div>
   `;
 }
@@ -181,105 +137,6 @@ function setupWriteButtons() {
   document.getElementById("homeAddReservation")?.addEventListener("click", () => {
     openReservationModal({ mode: "create", presetDate: selectedDate });
   });
-}
-
-function setupUndoRedoButtons() {
-  const undoButton = document.getElementById("homeUndoButton");
-  const redoButton = document.getElementById("homeRedoButton");
-
-  undoButton?.addEventListener("click", async () => {
-    await runHistoryAction(undoButton, async () => {
-      const log = await getLatestUndoableLog();
-      const result = await executeUndo(log);
-      if (result.status === "done") {
-        showUndoToast(`${targetLabel(log)}を元に戻しました`);
-      } else if (result.status === "skipped") {
-        showUndoToast("undo を中止しました");
-      } else {
-        showUndoToast("元に戻せる操作がありません");
-      }
-    });
-  });
-
-  redoButton?.addEventListener("click", async () => {
-    await runHistoryAction(redoButton, async () => {
-      const log = await getLatestRedoableLog();
-      const result = await executeRedo();
-      if (result.status === "done") {
-        showUndoToast(`${targetLabel(log)}をやり直しました`);
-      } else {
-        showUndoToast("やり直せる操作がありません");
-      }
-    });
-  });
-}
-
-async function runHistoryAction(button, action) {
-  button.disabled = true;
-  setUndoStatus("処理中...");
-  try {
-    await action();
-  } catch (error) {
-    console.error("history action failed", error);
-    showUndoToast(error.message || "履歴操作に失敗しました");
-  } finally {
-    await refreshUndoRedoButtons();
-  }
-}
-
-async function refreshUndoRedoButtons() {
-  const undoButton = document.getElementById("homeUndoButton");
-  const redoButton = document.getElementById("homeRedoButton");
-  if (!undoButton || !redoButton) return;
-
-  try {
-    const [undoLog, redoLog] = await Promise.all([getLatestUndoableLog(), getLatestRedoableLog()]);
-    undoButton.disabled = !undoLog;
-    undoButton.title = undoLog ? `${targetLabel(undoLog)}を元に戻す` : "元に戻せる操作がありません";
-    redoButton.disabled = !redoLog;
-    redoButton.title = redoLog ? `${targetLabel(redoLog)}をやり直す` : "やり直せる操作がありません";
-    setUndoStatus(undoLog ? `最新: ${actionLabel(undoLog.action)} / ${targetLabel(undoLog)}` : "元に戻せる操作がありません");
-  } catch (error) {
-    console.error("undo state refresh failed", error);
-    undoButton.disabled = true;
-    redoButton.disabled = true;
-    undoButton.title = "元に戻せる操作がありません";
-    redoButton.title = "やり直せる操作がありません";
-    setUndoStatus("履歴を確認できませんでした");
-  }
-}
-
-function targetLabel(log) {
-  const target = log?.target || log?.target_path || log?.inverse_operation?.target || "対象";
-  const id = target.split("/").pop();
-  if (target.startsWith("reservations/")) return `${id} の予約`;
-  if (target.startsWith("schedules/")) return `${id} の営業予定`;
-  if (target.startsWith("blocks/")) return `${id} の予約不可`;
-  return target;
-}
-
-function actionLabel(action) {
-  if (!action) return "操作";
-  if (action.startsWith("undo_of:")) return "undo";
-  if (action.startsWith("redo_of:")) return "redo";
-  return action;
-}
-
-function setUndoStatus(text) {
-  const status = document.getElementById("homeUndoStatus");
-  if (status) status.textContent = text;
-}
-
-function showUndoToast(message) {
-  const toast = document.getElementById("homeUndoToast");
-  if (!toast) return;
-
-  toast.textContent = message;
-  toast.hidden = false;
-  clearTimeout(showUndoToast.timer);
-  showUndoToast.timer = setTimeout(() => {
-    toast.hidden = true;
-  }, 3600);
 }
 
 function subscribeMonthData() {
@@ -335,61 +192,8 @@ function subscribeMonthData() {
   );
 }
 
-function subscribeTodayReservations() {
-  unsubscribeTodayReservations?.();
-
-  unsubscribeTodayReservations = onSnapshot(
-    query(
-      collection(db, "reservations"),
-      where("visit_date", "==", todayKey()),
-      where("status", "==", "active"),
-      limit(100),
-    ),
-    (snapshot) => {
-      todayReservations = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-      renderTodayLists();
-    },
-    (error) => {
-      console.error("today reservations listener failed", error);
-      renderError("homeTodayReservationList", error.message);
-    },
-  );
-}
-
-function subscribeTodayBlocks() {
-  unsubscribeTodayBlocks?.();
-
-  unsubscribeTodayBlocks = onSnapshot(
-    query(
-      collection(db, "blocks"),
-      where("date", "==", todayKey()),
-      where("active", "==", true),
-      limit(100),
-    ),
-    (snapshot) => {
-      todayBlocks = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-      if (selectedDate === todayKey()) {
-        selectedBlocks = todayBlocks;
-        renderSelectedDetails();
-      }
-      renderTodayLists();
-    },
-    (error) => {
-      console.error("today blocks listener failed", error);
-      renderError("homeTodayBlockList", error.message);
-    },
-  );
-}
-
 function subscribeSelectedBlocks(date) {
   unsubscribeSelectedBlocks?.();
-
-  if (date === todayKey()) {
-    selectedBlocks = todayBlocks;
-    renderSelectedDetails();
-    unsubscribeSelectedBlocks = null;
-    return;
-  }
 
   selectedBlocks = [];
   unsubscribeSelectedBlocks = onSnapshot(
@@ -413,7 +217,6 @@ function subscribeSelectedBlocks(date) {
 function renderHome() {
   renderCalendar();
   renderSelectedDetails();
-  renderTodayLists();
 }
 
 function renderCalendar() {
@@ -500,11 +303,6 @@ function renderSelectedDetails() {
 
   renderReservationList("homeSelectedReservationList", reservationsForDate(selectedDate));
   renderBlockList("homeSelectedBlockList", selectedBlocks);
-}
-
-function renderTodayLists() {
-  renderReservationList("homeTodayReservationList", todayReservations);
-  renderBlockList("homeTodayBlockList", todayBlocks);
 }
 
 function renderReservationList(id, reservations) {
