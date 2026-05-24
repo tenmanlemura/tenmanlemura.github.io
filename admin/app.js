@@ -10,11 +10,9 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.1/firebas
 import { firebaseConfig } from "./firebase-config.js";
 import { initDegradedListener } from "./degraded.js";
 import { initHomeTab } from "./home-tab.js";
-import { initScheduleTab } from "./schedule-tab.js";
-import { initBlockTab } from "./block-tab.js";
 import { initSettingsTab } from "./settings-tab.js";
 
-const VALID_TABS = ["home", "schedule", "block", "settings"];
+const VALID_TABS = ["home", "settings"];
 const LOGIN_PATH = "login.html";
 const ADMIN_PATH = "index.html";
 const NO_ADMIN_MESSAGE = "このアカウントには管理権限がありません。yuko に連絡してください。";
@@ -50,6 +48,7 @@ export function setupTabs() {
   }
 
   function activateTab(nextTab, options = {}) {
+    const requestedTab = nextTab;
     const tab = normalizeTab(nextTab);
 
     buttons.forEach((button) => {
@@ -67,7 +66,7 @@ export function setupTabs() {
 
     loadTab(tab);
 
-    if (!options.skipHash && window.location.hash !== `#${tab}`) {
+    if ((!options.skipHash || requestedTab !== tab) && window.location.hash !== `#${tab}`) {
       window.location.hash = tab;
     }
   }
@@ -102,12 +101,6 @@ export function setupLogout() {
 export function loadHomeTab() {
   initHomeTab();
 }
-export function loadScheduleTab() {
-  initScheduleTab();
-}
-export function loadBlockTab() {
-  initBlockTab();
-}
 export function loadSettingsTab() {
   initSettingsTab();
 }
@@ -115,8 +108,6 @@ export function loadSettingsTab() {
 function loadTab(tab) {
   const loaders = {
     home: loadHomeTab,
-    schedule: loadScheduleTab,
-    block: loadBlockTab,
     settings: loadSettingsTab,
   };
 

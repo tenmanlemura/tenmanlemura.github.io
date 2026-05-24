@@ -230,6 +230,11 @@ async function validateReservation(values, currentId) {
   if (collision) {
     return `${collision.start_time}-${collision.end_time} の予約と重複しています`;
   }
+
+  const blockCollision = await findBlockCollision(values);
+  if (blockCollision) {
+    return `${blockCollision.start_time}-${blockCollision.end_time} の予約不可時間と重複しています`;
+  }
   return "";
 }
 
@@ -241,15 +246,26 @@ async function findReservationCollision(values, currentId) {
       where("status", "==", "active"),
     ),
   );
-  const start = timeToMinutes(values.start_time);
-  const end = timeToMinutes(values.end_time);
-
   return snapshot.docs
     .map((item) => ({ id: item.id, ...item.data() }))
     .find((item) => {
       if (item.id === currentId || item.reservation_id === currentId) return false;
-      return start < timeToMinutes(item.end_time) && end > timeToMinutes(item.start_time);
+      return timeRangesOverlap(values.start_time, values.end_time, item.start_time, item.end_time);
     });
+}
+
+async function findBlockCollision(values) {
+  const snapshot = await getDocs(
+    query(
+      collection(db, "blocks"),
+      where("date", "==", values.visit_date),
+      where("active", "==", true),
+    ),
+  );
+
+  return snapshot.docs
+    .map((item) => ({ id: item.id, ...item.data() }))
+    .find((item) => timeRangesOverlap(values.start_time, values.end_time, item.start_time, item.end_time));
 }
 
 function normalizeExisting(existing, presetDate) {
@@ -382,6 +398,10 @@ function minutesToTime(value) {
 function addMinutesToTime(value, amount) {
   if (!isValidTime(value) || !Number.isFinite(amount)) return "";
   return minutesToTime(timeToMinutes(value) + amount);
+}
+
+function timeRangesOverlap(startA, endA, startB, endB) {
+  return timeToMinutes(startA) < timeToMinutes(endB) && timeToMinutes(endA) > timeToMinutes(startB);
 }
 
 function randomHex(length) {

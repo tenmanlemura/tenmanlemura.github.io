@@ -37,8 +37,6 @@
     <nav class="tabs" aria-label="管理メニュー">
       <div class="wrap tab-row" role="tablist">
         <button type="button" class="tab-btn" id="tab-button-home" data-tab="home" role="tab" aria-controls="tab-home">ホーム</button>
-        <button type="button" class="tab-btn" id="tab-schedule" data-tab="schedule" role="tab" aria-controls="panel-schedule">営業予定</button>
-        <button type="button" class="tab-btn" id="tab-block" data-tab="block" role="tab" aria-controls="panel-block">予約不可</button>
         <button type="button" class="tab-btn" id="tab-settings" data-tab="settings" role="tab" aria-controls="panel-settings">設定</button>
       </div>
     </nav>
@@ -46,22 +44,6 @@
     <main class="wrap main-content">
       <section class="panel tab-panel" id="tab-home" data-tab-panel="home" role="tabpanel" aria-labelledby="tab-button-home">
         <div class="tab-home-loading" id="homeTabSpinner" role="status">読み込み中...</div>
-      </section>
-
-      <section class="panel" id="panel-schedule" data-tab-panel="schedule" role="tabpanel" aria-labelledby="tab-schedule">
-        <div class="panel-heading">
-          <p class="section-label">Schedule</p>
-          <h2>営業予定</h2>
-        </div>
-        <div class="tab-placeholder">Step 7b で実装</div>
-      </section>
-
-      <section class="panel" id="panel-block" data-tab-panel="block" role="tabpanel" aria-labelledby="tab-block">
-        <div class="panel-heading">
-          <p class="section-label">Blocked time</p>
-          <h2>予約不可</h2>
-        </div>
-        <div class="tab-placeholder">Step 7b で実装</div>
       </section>
 
       <section class="panel" id="panel-settings" data-tab-panel="settings" role="tabpanel" aria-labelledby="tab-settings">
