@@ -32,6 +32,7 @@ const PLANNED_STORES = [
 ];
 const OPEN_MINUTES = 9 * 60;
 const CLOSE_MINUTES = 21 * 60;
+const YEAR_PICKER_RADIUS = 5;
 
 let initialized = false;
 let built = false;
@@ -61,6 +62,7 @@ export function initHomeTab() {
 
   initialized = true;
   setupMonthButtons();
+  setupMonthPicker();
   setupWriteButtons();
   subscribeMonthData();
   subscribeSelectedBlocks(selectedDate);
@@ -87,7 +89,19 @@ function buildHomeDom(root) {
       <section class="month-shell" aria-labelledby="homeMonthTitle">
         <div class="month-head">
           <button type="button" class="btn btn-secondary btn-compact" id="homePrevMonth">前月</button>
-          <div class="month-title" id="homeMonthTitle">--</div>
+          <div class="month-title-wrap">
+            <button type="button" class="month-title" id="homeMonthTitle" aria-haspopup="dialog" aria-expanded="false" aria-controls="homeMonthPicker">--</button>
+            <div class="month-picker" id="homeMonthPicker" role="dialog" aria-label="表示月を選択" hidden>
+              <label class="month-picker-field">
+                <span>年</span>
+                <select id="homeMonthYear"></select>
+              </label>
+              <label class="month-picker-field">
+                <span>月</span>
+                <select id="homeMonthSelect"></select>
+              </label>
+            </div>
+          </div>
           <button type="button" class="btn btn-secondary btn-compact" id="homeNextMonth">次月</button>
           <button type="button" class="btn btn-secondary btn-compact" id="homeCurrentMonth">今月</button>
         </div>
@@ -179,6 +193,73 @@ function setupMonthButtons() {
     subscribeSelectedBlocks(selectedDate);
     renderHome();
   });
+}
+
+function setupMonthPicker() {
+  const title = document.getElementById("homeMonthTitle");
+  const picker = document.getElementById("homeMonthPicker");
+  const yearSelect = document.getElementById("homeMonthYear");
+  const monthSelect = document.getElementById("homeMonthSelect");
+  if (!title || !picker || !yearSelect || !monthSelect) return;
+
+  title.addEventListener("click", () => {
+    if (picker.hidden) {
+      openMonthPicker();
+      return;
+    }
+    closeMonthPicker();
+  });
+
+  yearSelect.addEventListener("change", applyMonthPickerValue);
+  monthSelect.addEventListener("change", applyMonthPickerValue);
+
+  document.addEventListener("click", (event) => {
+    if (picker.hidden) return;
+    if (event.target === title || picker.contains(event.target)) return;
+    closeMonthPicker();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !picker.hidden) {
+      closeMonthPicker();
+      title.focus();
+    }
+  });
+}
+
+function openMonthPicker() {
+  const title = document.getElementById("homeMonthTitle");
+  const picker = document.getElementById("homeMonthPicker");
+  const yearSelect = document.getElementById("homeMonthYear");
+  if (!title || !picker) return;
+
+  syncMonthPicker();
+  picker.hidden = false;
+  title.setAttribute("aria-expanded", "true");
+  yearSelect?.focus();
+}
+
+function closeMonthPicker() {
+  const title = document.getElementById("homeMonthTitle");
+  const picker = document.getElementById("homeMonthPicker");
+  if (!title || !picker) return;
+
+  picker.hidden = true;
+  title.setAttribute("aria-expanded", "false");
+}
+
+function applyMonthPickerValue() {
+  const yearSelect = document.getElementById("homeMonthYear");
+  const monthSelect = document.getElementById("homeMonthSelect");
+  const year = Number(yearSelect?.value);
+  const month = Number(monthSelect?.value);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) return;
+
+  currentMonth = new Date(year, month - 1, 1);
+  selectedDate = dateKey(currentMonth);
+  subscribeMonthData();
+  subscribeSelectedBlocks(selectedDate);
+  renderHome();
 }
 
 function setupWriteButtons() {
@@ -293,6 +374,7 @@ function renderCalendar() {
   if (!title || !grid) return;
 
   title.textContent = `${currentMonth.getFullYear()} 年 ${currentMonth.getMonth() + 1} 月`;
+  syncMonthPicker();
   grid.innerHTML = "";
 
   WDAYS.forEach((wday) => {
@@ -851,12 +933,19 @@ function resolveDayBadgeStore(schedule, reservations) {
   }
   const codes = new Set();
   for (const r of reservations || []) {
-    if (r.store_code === "tanushimaru" || r.store_code === "dazaifu" || r.store_code === "event") {
-      codes.add(r.store_code);
+    const store = reservationStoreCode(r);
+    if (store) {
+      codes.add(store);
     }
   }
   if (codes.size === 1) return [...codes][0];
   return null;
+}
+
+function reservationStoreCode(reservation) {
+  const store = reservation?.store_code;
+  if (store === "tanushimaru" || store === "dazaifu" || store === "event") return store;
+  return "";
 }
 
 function storeBadge(store) {
@@ -895,6 +984,48 @@ function compareReservationTime(a, b) {
 
 function storeLabel(store) {
   return STORE_LABELS[store] || store || "店舗未設定";
+}
+
+function syncMonthPicker() {
+  const yearSelect = document.getElementById("homeMonthYear");
+  const monthSelect = document.getElementById("homeMonthSelect");
+  if (!yearSelect || !monthSelect) return;
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth() + 1;
+  const firstOption = Number(yearSelect.options[0]?.value);
+  const lastOption = Number(yearSelect.options[yearSelect.options.length - 1]?.value);
+  if (!yearSelect.options.length || year <= firstOption || year >= lastOption) {
+    yearSelect.replaceChildren(...yearOptions(year));
+  }
+  yearSelect.value = String(year);
+
+  if (!monthSelect.options.length) {
+    monthSelect.replaceChildren(...monthOptions());
+  }
+  monthSelect.value = String(month);
+}
+
+function yearOptions(centerYear) {
+  const options = [];
+  for (let year = centerYear - YEAR_PICKER_RADIUS; year <= centerYear + YEAR_PICKER_RADIUS; year += 1) {
+    const option = document.createElement("option");
+    option.value = String(year);
+    option.textContent = `${year} 年`;
+    options.push(option);
+  }
+  return options;
+}
+
+function monthOptions() {
+  const options = [];
+  for (let month = 1; month <= 12; month += 1) {
+    const option = document.createElement("option");
+    option.value = String(month);
+    option.textContent = `${month} 月`;
+    options.push(option);
+  }
+  return options;
 }
 
 function stripId(value) {

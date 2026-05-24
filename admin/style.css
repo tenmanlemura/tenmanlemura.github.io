@@ -480,13 +480,79 @@ button {
 }
 
 .month-title {
-  grid-column: 1 / -1;
+  width: auto;
+  min-height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--fg);
+  cursor: pointer;
   font-size: 17px;
   font-weight: 700;
   line-height: 1.3;
+  padding: 4px 10px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+.month-title:hover {
+  background: var(--soft-bg);
+  color: var(--primary-dk);
+}
+
+.month-title:focus-visible {
+  outline: 3px solid rgba(91, 197, 212, 0.45);
+  outline-offset: 3px;
+}
+
+.month-title-wrap {
+  position: relative;
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.month-picker {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 10;
+  display: grid;
+  width: min(280px, calc(100vw - 40px));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-2);
+  border: 1px solid rgba(43, 177, 199, 0.28);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 16px 34px rgba(30, 90, 104, 0.16);
+  padding: var(--space-3);
+  transform: translateX(-50%);
+}
+
+.month-picker-field {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.month-picker-field select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: var(--fg);
+  padding: 6px 8px;
+  font: inherit;
+}
+
+.month-picker-field select:focus {
+  border-color: var(--primary);
+  outline: 3px solid rgba(91, 197, 212, 0.2);
+  outline-offset: 0;
 }
 
 .btn-secondary {
@@ -879,6 +945,10 @@ button {
   }
 
   .month-title {
+    grid-column: auto;
+  }
+
+  .month-title-wrap {
     grid-column: auto;
   }
 
