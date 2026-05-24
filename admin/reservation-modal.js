@@ -32,35 +32,35 @@ export function openReservationModal({ mode, presetDate, existing } = {}) {
   form.innerHTML = `
     <div class="form-grid">
       <label class="form-field">
-        <span>日付</span>
-        <input type="date" name="visit_date" value="${escapeAttr(initial.visit_date)}" required>
+        <span>日付<em class="form-required" aria-hidden="true">必須</em></span>
+        <input type="date" name="visit_date" value="${escapeAttr(initial.visit_date)}" required aria-required="true">
       </label>
       <label class="form-field">
-        <span>開始時刻</span>
-        <select name="start_time" required>${timeOptions(initial.start_time, false)}</select>
+        <span>開始時刻<em class="form-required" aria-hidden="true">必須</em></span>
+        <select name="start_time" required aria-required="true">${timeOptions(initial.start_time, false)}</select>
       </label>
       <fieldset class="form-fieldset">
-        <legend>コース</legend>
+        <legend>コース<em class="form-required" aria-hidden="true">必須</em></legend>
         <div class="radio-row">${radioOptions("course_code", COURSE_OPTIONS, initial.course_code)}</div>
       </fieldset>
       <label class="form-field">
-        <span>終了時刻</span>
+        <span>終了時刻<em class="form-hint" aria-hidden="true">自動</em></span>
         <input type="text" name="end_time" value="${escapeAttr(initial.end_time)}" readonly>
       </label>
       <fieldset class="form-fieldset">
-        <legend>店舗</legend>
+        <legend>店舗<em class="form-required" aria-hidden="true">必須</em></legend>
         <div class="radio-row">${radioOptions("store_code", STORE_OPTIONS, initial.store_code)}</div>
       </fieldset>
       <label class="form-field">
-        <span>お名前</span>
-        <input type="text" name="customer_name" value="${escapeAttr(initial.customer_name)}" required>
+        <span>お名前<em class="form-required" aria-hidden="true">必須</em></span>
+        <input type="text" name="customer_name" value="${escapeAttr(initial.customer_name)}" required aria-required="true">
       </label>
       <label class="form-field">
-        <span>電話番号</span>
+        <span>電話番号<em class="form-hint" aria-hidden="true">任意</em></span>
         <input type="tel" name="customer_phone" value="${escapeAttr(initial.customer_phone)}">
       </label>
       <label class="form-field form-field-wide">
-        <span>メモ</span>
+        <span>メモ<em class="form-hint" aria-hidden="true">任意</em></span>
         <textarea name="note" rows="3">${escapeText(initial.note)}</textarea>
       </label>
     </div>
@@ -207,8 +207,14 @@ function readReservationForm(form) {
 }
 
 async function validateReservation(values, currentId) {
-  if (!values.visit_date || !values.start_time || !values.course_code || !values.store_code || !values.customer_name) {
-    return "必須項目を入力してください";
+  const missing = [];
+  if (!values.visit_date) missing.push("日付");
+  if (!values.start_time) missing.push("開始時刻");
+  if (!values.course_code) missing.push("コース");
+  if (!values.store_code) missing.push("店舗");
+  if (!values.customer_name) missing.push("お名前");
+  if (missing.length > 0) {
+    return `次の必須項目を入力してください：${missing.join("、")}`;
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(values.visit_date)) return "日付の形式が不正です";
   if (!isValidTime(values.start_time) || !isValidTime(values.end_time)) return "時刻の形式が不正です";
