@@ -29,7 +29,6 @@ const PLANNED_STORES = [
   ["tanushimaru", "田主丸店"],
   ["dazaifu", "太宰府店"],
   ["event", "イベント"],
-  ["both", "両店舗"],
 ];
 const OPEN_MINUTES = 9 * 60;
 const CLOSE_MINUTES = 21 * 60;
@@ -116,7 +115,7 @@ function buildHomeDom(root) {
                   </div>
                   <fieldset class="form-fieldset form-field-wide">
                     <legend>営業予定</legend>
-                    <div class="radio-row">${radioOptions("planned_store", PLANNED_STORES, "both")}</div>
+                    <div class="radio-row">${radioOptions("planned_store", PLANNED_STORES, "tanushimaru")}</div>
                   </fieldset>
                   <label class="form-field">
                     <span>イベント名</span>
@@ -383,7 +382,9 @@ function renderSelectedSchedule() {
   const dateNode = document.getElementById("homeScheduleDate");
   if (dateNode) dateNode.textContent = selectedDate;
 
-  const planned = schedule?.planned_store || "both";
+  const planned = PLANNED_STORES.some(([value]) => value === schedule?.planned_store)
+    ? schedule.planned_store
+    : "tanushimaru";
   form.querySelectorAll('input[name="planned_store"]').forEach((input) => {
     input.checked = input.value === planned;
   });

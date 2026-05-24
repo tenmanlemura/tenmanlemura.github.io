@@ -250,6 +250,7 @@ async function findReservationCollision(values, currentId) {
     .map((item) => ({ id: item.id, ...item.data() }))
     .find((item) => {
       if (item.id === currentId || item.reservation_id === currentId) return false;
+      if (item.store_code !== values.store_code) return true;
       return timeRangesOverlap(values.start_time, values.end_time, item.start_time, item.end_time);
     });
 }
