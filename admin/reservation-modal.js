@@ -238,7 +238,6 @@ async function findReservationCollision(values, currentId) {
     query(
       collection(db, "reservations"),
       where("visit_date", "==", values.visit_date),
-      where("store_code", "==", values.store_code),
       where("status", "==", "active"),
     ),
   );

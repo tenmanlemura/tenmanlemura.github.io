@@ -441,7 +441,7 @@ function renderCalendar() {
     const key = dateKey(day);
     const reservations = reservationsForDate(key);
     const schedule = schedulesByDate.get(key);
-    const plannedStore = schedule?.planned_store || "both";
+    const badgeStore = resolveDayBadgeStore(schedule, reservations);
     const cell = document.createElement("button");
     cell.type = "button";
     cell.className = "month-cell";
@@ -458,7 +458,7 @@ function renderCalendar() {
     dayNum.className = "month-daynum";
     dayNum.textContent = String(day.getDate());
     dayLine.appendChild(dayNum);
-    dayLine.appendChild(storeBadge(plannedStore));
+    if (badgeStore) dayLine.appendChild(storeBadge(badgeStore));
     cell.appendChild(dayLine);
 
     if (reservations.length > 0) {
@@ -602,6 +602,21 @@ function reservationActionButton(label, action, reservation) {
     }
   });
   return button;
+}
+
+function resolveDayBadgeStore(schedule, reservations) {
+  const planned = schedule?.planned_store;
+  if (planned === "tanushimaru" || planned === "dazaifu" || planned === "event") {
+    return planned;
+  }
+  const codes = new Set();
+  for (const r of reservations || []) {
+    if (r.store_code === "tanushimaru" || r.store_code === "dazaifu" || r.store_code === "event") {
+      codes.add(r.store_code);
+    }
+  }
+  if (codes.size === 1) return [...codes][0];
+  return null;
 }
 
 function storeBadge(store) {
