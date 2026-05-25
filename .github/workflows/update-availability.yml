@@ -132,7 +132,11 @@ jobs:
             *\?*) SEP="&";;
             *)    SEP="?";;
           esac
-          HTTP_CODE=$(curl -sL -o /tmp/notify-response.json -w "%{http_code}" \
+          # Apps Script Web App の POST は 302 redirect で googleusercontent.com に飛ぶ仕様。
+          # -L で追跡すると最終 GET で 405 が返るが、Apps Script の doPost 自体は実行成功している
+          # （publish_state の lastPublishedRevision が更新されることで確認できる）。
+          # そのため -L を外して 302 を成功扱いにする。
+          HTTP_CODE=$(curl -s -o /tmp/notify-response.json -w "%{http_code}" \
             --max-time 30 \
             -X POST "${GAS_PUBLISH_NOTIFY_URL}${SEP}secret=${GAS_WEBHOOK_SECRET}" \
             -H "Content-Type: application/json" \
@@ -140,7 +144,7 @@ jobs:
           echo "GAS publishComplete: HTTP ${HTTP_CODE}"
           cat /tmp/notify-response.json 2>/dev/null || true
           echo
-          if [ "$HTTP_CODE" != "200" ]; then
+          if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "302" ]; then
             echo "ERROR: GAS publishComplete returned HTTP ${HTTP_CODE}" >&2
             exit 1
           fi
