@@ -126,9 +126,15 @@ jobs:
           PUBLISHED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           BODY=$(jq -nc --argjson rev "${PUBLISH_REVISION}" --arg at "${PUBLISHED_AT}" \
             '{publishedRevision: $rev, publishedAt: $at}')
+          # NOTIFY_URL に既に query (?path=api/publish-complete) が含まれている前提で & 連結。
+          # 含まれていない場合のフォールバックとして ? と & を自動切替。
+          case "$GAS_PUBLISH_NOTIFY_URL" in
+            *\?*) SEP="&";;
+            *)    SEP="?";;
+          esac
           HTTP_CODE=$(curl -sL -o /tmp/notify-response.json -w "%{http_code}" \
             --max-time 30 \
-            -X POST "${GAS_PUBLISH_NOTIFY_URL}?secret=${GAS_WEBHOOK_SECRET}" \
+            -X POST "${GAS_PUBLISH_NOTIFY_URL}${SEP}secret=${GAS_WEBHOOK_SECRET}" \
             -H "Content-Type: application/json" \
             --data "${BODY}")
           echo "GAS publishComplete: HTTP ${HTTP_CODE}"
