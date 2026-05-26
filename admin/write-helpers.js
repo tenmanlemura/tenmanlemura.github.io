@@ -40,6 +40,10 @@ export async function commitWrite({ op, domain, inverse, target, dispatchSource 
     }
 
     const logRef = doc(collection(db, "admin_log"));
+    // M-B4 (rejected): actor_uid / actor_email 分離は Firestore Rules `validAdminLog()` の
+    // hasOnly(['actor','action','target','timestamp','inverse_operation','schema_version',
+    // 'written_by','written_at','source_revision']) 違反で write fail する。
+    // 現状の actor 単一フィールド構成を維持。
     tx.set(logRef, {
       actor: user.email || user.uid,
       action: op,
@@ -52,6 +56,9 @@ export async function commitWrite({ op, domain, inverse, target, dispatchSource 
     if (stateSnap.exists()) {
       tx.update(stateRef, { publishRevision: newRevision });
     } else {
+      // M-B3 (rejected): common4 除去は Firestore Rules `validPublishState()` の
+      // hasAll(common4Keys()) 違反で create reject されるため revert。
+      // publish_state schema は実際は common4 を required（spec §3.5 記述が古いだけ）。
       tx.set(stateRef, {
         publishRevision: newRevision,
         lastDispatchAt: null,
@@ -103,6 +110,7 @@ export async function logSkipOnly({ action, target, reason }) {
   if (!user) throw new Error("not authenticated");
 
   const logRef = doc(collection(db, "admin_log"));
+  // M-B4 (rejected) と同じ理由で actor 単一フィールド維持（rules hasOnly() 違反回避）
   await setDoc(logRef, {
     schema_version: 1,
     written_by: "admin_spa",

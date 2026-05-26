@@ -165,6 +165,15 @@ function buildInverseForAppliedOperation(operation, targetSnap) {
   }
 
   if (!targetSnap.exists()) {
+    // L-C3 (RESOLVED-as-deferred 2026-05-26): targetSnap.exists()=false 経路は
+    // 「他 admin が delete 済み」のレアケースで、tenman 運用（yuko + tenman さん
+    // 1 人ずつ・admin 同時操作なし）では事実上発生しない。万一発生しても data:{}
+    // を redo 適用する時、commitWrite() (write-helpers.js:18) が common4 を後付け
+    // しても、firestore.rules の collection 固有必須フィールド (例: reservations
+    // なら reservation_id / customer_name / start_time 等の hasAll allowlist) を
+    // 満たさず **Rules reject される** ため、本番では undo 失敗の UX 劣化で止まり
+    // data 整合性は守られる。Phase D で複数 admin 同時運用に拡張する時に
+    // undo skip + admin_log 記録の正式 semantics を再設計予定。
     return {
       op: "create",
       target: operation.target,
