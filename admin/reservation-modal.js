@@ -98,10 +98,15 @@ export async function cancelReservation(id) {
         updated_at: serverTimestamp(),
       },
     },
+    // M-B5: inverse_operation.precondition を明示（spec §3.8 準拠）。
+    // 明示しない場合は undo.js::inferPrecondition で同じ type が推論されるが、
+    // 仕様意図を code 上で明確にすることで将来 inferPrecondition の挙動が変わっても
+    // cancelReservation の undo semantics は維持される。
     inverse: {
       op: "update",
       target: `reservations/${id}`,
       data: { status: "active" },
+      precondition: { type: "source_revision_match" },
     },
     target: `reservations/${id}`,
     dispatchSource: "admin_reservation_cancel",
