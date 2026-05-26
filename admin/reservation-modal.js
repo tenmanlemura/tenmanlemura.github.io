@@ -7,6 +7,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db } from "./app.js";
 import { commitWrite } from "./write-helpers.js";
+import { isDegraded } from "./degraded.js";
 
 const STORE_OPTIONS = [
   ["tanushimaru", "田主丸店"],
@@ -406,7 +407,7 @@ function createModal({ title, submitLabel }) {
       <div class="modal-body"></div>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" data-modal-cancel>キャンセル</button>
-        <button type="button" class="btn" data-modal-submit data-write="true">${submitLabel}</button>
+        <button type="button" class="btn" data-modal-submit data-write="true"${isDegraded() ? " disabled" : ""}>${submitLabel}</button>
       </div>
     </div>
   `;

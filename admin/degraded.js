@@ -62,7 +62,10 @@ function setDegraded(enabled) {
   document.body.classList.toggle("degraded-mode", degraded);
 
   // spec §5.1 準拠: HTML disabled 属性で確実に操作不可（keyboard / screen reader user 含む WCAG 整合）。
-  // 動的追加 button は assertNotDegraded() ガードに依存（モーダル open 時に throw）。
+  // 動的追加 button (reservation-modal / home-tab の createModal) は以下の多層防御:
+  //   (1) modal 生成テンプレ内で ${isDegraded() ? " disabled" : ""} を初期 inject（M-A4）
+  //   (2) ここの querySelectorAll で modal open 後の degraded 状態変化にも追従
+  //   (3) assertNotDegraded() ガードを write 直前に呼んで万一を throw で止める
   document.querySelectorAll('button[data-write="true"]').forEach((btn) => {
     btn.disabled = degraded;
   });

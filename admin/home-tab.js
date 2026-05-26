@@ -11,19 +11,18 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { cancelReservation, openReservationModal } from "./reservation-modal.js";
 import { commitWrite } from "./write-helpers.js";
+import { isDegraded } from "./degraded.js";
 
 const WDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 const STORE_LABELS = {
   tanushimaru: "田主丸店",
   dazaifu: "太宰府店",
   event: "イベント出店",
-  both: "両店舗受付中",
 };
 const STORE_BADGE_LABELS = {
   tanushimaru: "田主丸",
   dazaifu: "太宰府",
   event: "EVENT",
-  both: "両店舗",
 };
 const PLANNED_STORES = [
   ["tanushimaru", "田主丸店"],
@@ -42,6 +41,7 @@ let monthReservations = [];
 let schedulesByDate = new Map();
 let selectedBlocks = [];
 let selectedBlocksError = "";
+let formDirty = false;
 let unsubscribeReservations = null;
 let unsubscribeSchedules = null;
 let unsubscribeSelectedBlocks = null;
@@ -115,58 +115,84 @@ function buildHomeDom(root) {
             <p class="section-label">Selected day</p>
             <h3 id="homeSelectedTitle">選択日詳細</h3>
           </div>
-          <button type="button" class="btn btn-secondary btn-compact" id="homeAddReservation" data-write="true">予約を追加</button>
         </div>
-        <div class="detail-grid">
-          <div class="day-editor">
-            <section class="day-editor-section" aria-labelledby="homeScheduleHeading">
-              <h4 id="homeScheduleHeading">営業予定</h4>
-              <form class="modal-form" id="homeScheduleForm" noValidate>
-                <div class="form-grid">
-                  <div class="form-field">
-                    <span>日付</span>
-                    <strong id="homeScheduleDate">--</strong>
-                  </div>
-                  <fieldset class="form-fieldset form-field-wide">
-                    <legend>営業予定</legend>
-                    <div class="radio-row">${radioOptions("planned_store", PLANNED_STORES, "tanushimaru")}</div>
-                  </fieldset>
-                  <label class="form-field">
-                    <span>イベント名</span>
-                    <input type="text" name="event_name">
-                  </label>
-                  <label class="form-field">
-                    <span>会場</span>
-                    <input type="text" name="event_venue">
-                  </label>
-                  <label class="form-field form-field-wide">
-                    <span>メモ</span>
-                    <textarea name="note" rows="3"></textarea>
-                  </label>
-                </div>
-                <p class="form-error" data-schedule-error hidden></p>
-                <div class="day-editor-actions">
-                  <button type="submit" class="btn btn-compact" data-write="true">営業予定を保存</button>
-                  <button type="button" class="btn btn-secondary btn-compact" id="homeDeleteSchedule" data-write="true">削除</button>
-                </div>
-              </form>
-            </section>
-            <section class="day-editor-section" aria-labelledby="homeBlockHeading">
-              <div class="section-subhead-action">
-                <h4 id="homeBlockHeading">予約不可</h4>
-                <button type="button" class="btn btn-secondary btn-compact" id="homeAddBlock" data-write="true">予約不可を追加</button>
-              </div>
-              <p class="tab-status" id="homeBlockStatus" role="status">選択日の予約不可を同期中</p>
-            </section>
-          </div>
-          <div>
-            <h4>予約 / 予約不可</h4>
-            <div class="row-list" id="homeSelectedList"></div>
-          </div>
+        <div class="x-summary" id="homeDaySummary">
+          <span class="x-pill is-empty" data-summary-store>営業予定なし</span>
+          <span class="x-counts" data-summary-counts>予約 0 件 ／ 予約不可 0 件</span>
+          <button type="button" class="btn btn-secondary btn-compact x-summary-edit" id="homeOpenScheduleModal" data-write="true">営業予定を編集</button>
+          <p class="x-note" data-summary-note hidden></p>
         </div>
       </section>
     </div>
   `;
+  buildScheduleModalDom();
+}
+
+function buildScheduleModalDom() {
+  if (document.getElementById("homeScheduleModalBackdrop")) return;
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop schedule-modal-backdrop";
+  backdrop.id = "homeScheduleModalBackdrop";
+  backdrop.setAttribute("aria-hidden", "true");
+  backdrop.innerHTML = `
+    <div class="modal schedule-modal" role="dialog" aria-modal="true" aria-labelledby="homeScheduleModalTitle">
+      <header class="modal-header">
+        <div>
+          <h3 id="homeScheduleModalTitle">営業予定を編集</h3>
+          <p class="modal-date" id="homeScheduleDate">--</p>
+        </div>
+        <button type="button" class="modal-close" data-schedule-modal-close aria-label="閉じる">×</button>
+      </header>
+      <div class="modal-body">
+        <form class="modal-form" id="homeScheduleForm" noValidate>
+          <div class="form-grid">
+            <fieldset class="form-fieldset form-field-wide">
+              <legend>営業先</legend>
+              <div class="radio-row">${radioOptions("planned_store", PLANNED_STORES, "")}</div>
+            </fieldset>
+            <div class="event-fields form-field-wide" data-event-fields hidden>
+              <label class="form-field">
+                <span>イベント名</span>
+                <input type="text" name="event_name">
+              </label>
+              <label class="form-field">
+                <span>会場</span>
+                <input type="text" name="event_venue">
+              </label>
+            </div>
+            <label class="form-field form-field-wide">
+              <span>メモ</span>
+              <textarea name="note" rows="3"></textarea>
+            </label>
+          </div>
+          <p class="form-error" data-schedule-error hidden></p>
+        </form>
+        <section class="modal-sub" aria-labelledby="homeReservationSubhead">
+          <div class="modal-sub-head">
+            <h4 id="homeReservationSubhead">予約</h4>
+            <button type="button" class="btn btn-secondary btn-compact" id="homeAddReservation" data-write="true">予約を追加</button>
+          </div>
+          <div class="row-list" id="homeSelectedList"></div>
+        </section>
+        <section class="modal-sub" aria-labelledby="homeBlockSubhead">
+          <div class="modal-sub-head">
+            <h4 id="homeBlockSubhead">予約不可</h4>
+            <button type="button" class="btn btn-secondary btn-compact" id="homeAddBlock" data-write="true">予約不可を追加</button>
+          </div>
+          <div class="row-list" id="homeSelectedBlockList"></div>
+        </section>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-danger btn-compact" id="homeDeleteSchedule" data-write="true">営業予定を削除</button>
+        <div class="modal-footer-primary">
+          <button type="button" class="btn btn-secondary btn-compact" data-schedule-modal-close>キャンセル</button>
+          <button type="submit" class="btn btn-compact" form="homeScheduleForm" data-write="true">保存</button>
+        </div>
+      </footer>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
 }
 
 function setupMonthButtons() {
@@ -263,6 +289,10 @@ function applyMonthPickerValue() {
 }
 
 function setupWriteButtons() {
+  document.getElementById("homeOpenScheduleModal")?.addEventListener("click", () => {
+    openScheduleModal();
+  });
+
   document.getElementById("homeAddReservation")?.addEventListener("click", () => {
     openReservationModal({ mode: "create", presetDate: selectedDate });
   });
@@ -283,6 +313,53 @@ function setupWriteButtons() {
   document.getElementById("homeScheduleForm")?.addEventListener("change", (event) => {
     if (event.target?.name === "planned_store") syncScheduleEventFields();
   });
+
+  document.getElementById("homeScheduleForm")?.addEventListener("input", () => {
+    formDirty = true;
+  });
+
+  document.querySelectorAll("[data-schedule-modal-close]").forEach((button) => {
+    button.addEventListener("click", closeScheduleModal);
+  });
+
+  document.getElementById("homeScheduleModalBackdrop")?.addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) closeScheduleModal();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (!isScheduleModalOpen() || isChildModalOpen()) return;
+    closeScheduleModal();
+  });
+}
+
+function openScheduleModal() {
+  const backdrop = document.getElementById("homeScheduleModalBackdrop");
+  if (!backdrop) return;
+
+  formDirty = false;
+  renderSelectedDetails();
+  backdrop.classList.add("is-open");
+  backdrop.setAttribute("aria-hidden", "false");
+  backdrop.querySelector("input, select, textarea, button")?.focus();
+}
+
+function closeScheduleModal() {
+  const backdrop = document.getElementById("homeScheduleModalBackdrop");
+  if (!backdrop) return;
+
+  formDirty = false;
+  backdrop.classList.remove("is-open");
+  backdrop.setAttribute("aria-hidden", "true");
+  document.getElementById("homeOpenScheduleModal")?.focus();
+}
+
+function isScheduleModalOpen() {
+  return Boolean(document.getElementById("homeScheduleModalBackdrop")?.classList.contains("is-open"));
+}
+
+function isChildModalOpen() {
+  return Boolean(document.querySelector("#modalRoot .modal-overlay"));
 }
 
 function subscribeMonthData() {
@@ -448,27 +525,55 @@ function renderCalendar() {
 function renderSelectedDetails() {
   const title = document.getElementById("homeSelectedTitle");
   if (title) {
-    title.textContent = selectedDate === todayKey() ? "今日の詳細" : `${selectedDate} の詳細`;
+    title.textContent = `${formatDateWithWday(selectedDate)}の予定`;
   }
 
+  renderDaySummary();
   renderSelectedSchedule();
-  renderBlockStatus();
-  renderSelectedList("homeSelectedList", reservationsForDate(selectedDate), selectedBlocks);
+  renderSelectedReservationList();
+  renderSelectedBlockList();
+}
+
+function renderDaySummary() {
+  const reservations = reservationsForDate(selectedDate);
+  const schedule = schedulesByDate.get(selectedDate);
+  const store = resolveDayBadgeStore(schedule, reservations);
+  const storeNode = document.querySelector("[data-summary-store]");
+  const countsNode = document.querySelector("[data-summary-counts]");
+  const noteNode = document.querySelector("[data-summary-note]");
+
+  if (storeNode) {
+    storeNode.className = `x-pill is-${store || "empty"}`;
+    storeNode.textContent = store ? storeLabel(store) : "営業予定なし";
+  }
+  if (countsNode) {
+    countsNode.textContent = `予約 ${reservations.length} 件 ／ 予約不可 ${selectedBlocks.length} 件`;
+  }
+  if (noteNode) {
+    const note = schedule?.note || "";
+    noteNode.textContent = note;
+    noteNode.hidden = !note;
+  }
 }
 
 function renderSelectedSchedule() {
   const form = document.getElementById("homeScheduleForm");
   if (!form) return;
 
-  const schedule = schedulesByDate.get(selectedDate);
   const dateNode = document.getElementById("homeScheduleDate");
-  if (dateNode) dateNode.textContent = selectedDate;
+  if (dateNode) dateNode.textContent = formatDateWithWday(selectedDate);
+
+  if (formDirty && isScheduleModalOpen()) {
+    return;
+  }
+
+  const schedule = schedulesByDate.get(selectedDate);
 
   const planned = PLANNED_STORES.some(([value]) => value === schedule?.planned_store)
     ? schedule.planned_store
-    : "tanushimaru";
+    : "";
   form.querySelectorAll('input[name="planned_store"]').forEach((input) => {
-    input.checked = input.value === planned;
+    input.checked = planned !== "" && input.value === planned;
   });
   form.elements.event_name.value = schedule?.event_name || "";
   form.elements.event_venue.value = schedule?.event_venue || "";
@@ -485,36 +590,48 @@ function syncScheduleEventFields() {
   if (!form) return;
 
   const isEvent = String(new FormData(form).get("planned_store") || "") === "event";
-  form.elements.event_name.disabled = !isEvent;
-  form.elements.event_venue.disabled = !isEvent;
+  const fields = form.querySelector("[data-event-fields]");
+  if (fields) fields.hidden = !isEvent;
 }
 
-function renderBlockStatus() {
-  const status = document.getElementById("homeBlockStatus");
-  if (!status) return;
-
-  if (selectedBlocksError) {
-    status.textContent = `予約不可の読み込みに失敗しました: ${selectedBlocksError}`;
-    return;
-  }
-
-  status.textContent = selectedBlocks.length > 0 ? `${selectedBlocks.length} 件の予約不可` : "予約不可なし";
-}
-
-function renderSelectedList(id, reservations, blocks) {
-  const list = document.getElementById(id);
+function renderSelectedReservationList() {
+  const list = document.getElementById("homeSelectedList");
   if (!list) return;
 
   list.innerHTML = "";
-  const rows = selectedDetailItems(reservations, blocks);
-  if (rows.length === 0 && !selectedBlocksError) {
-    list.appendChild(emptyRow("予定なし"));
+  const reservations = reservationsForDate(selectedDate);
+  if (reservations.length === 0) {
+    list.appendChild(emptyRow("予約なし"));
     return;
   }
 
-  rows.forEach((item) => {
-    list.appendChild(item.type === "reservation" ? reservationRow(item.value) : blockRow(item.value));
+  reservations.forEach((reservation) => {
+    list.appendChild(reservationRow(reservation));
   });
+}
+
+function renderSelectedBlockList() {
+  const list = document.getElementById("homeSelectedBlockList");
+  if (!list) return;
+
+  list.innerHTML = "";
+  if (selectedBlocks.length === 0 && !selectedBlocksError) {
+    list.appendChild(emptyRow("予約不可なし"));
+    return;
+  }
+
+  selectedBlocks
+    .map((block) => ({
+      type: "block",
+      startTime: block.start_time || "",
+      endTime: block.end_time || "",
+      id: block.id || "",
+      value: block,
+    }))
+    .sort(compareSelectedDetailItem)
+    .forEach((item) => {
+      list.appendChild(blockRow(item.value));
+    });
 
   if (selectedBlocksError) {
     list.appendChild(emptyRow(`予約不可の読み込みに失敗しました: ${selectedBlocksError}`));
@@ -735,6 +852,7 @@ async function submitSelectedSchedule(form) {
       target,
       dispatchSource: "admin_schedule_set",
     });
+    formDirty = false;
   } catch (errorObject) {
     console.error("schedule write failed", errorObject);
     setError(error, errorObject.message || "保存に失敗しました");
@@ -765,6 +883,7 @@ async function deleteSelectedSchedule() {
       target,
       dispatchSource: "admin_schedule_delete",
     });
+    formDirty = false;
   } catch (error) {
     console.error("delete schedule failed", error);
     alert(error.message || "削除に失敗しました");
@@ -952,7 +1071,6 @@ function storeBadge(store) {
   const badge = document.createElement("span");
   badge.className = "month-badge";
   if (store === "event") badge.classList.add("is-event");
-  if (store === "both") badge.classList.add("is-muted");
   badge.textContent = STORE_BADGE_LABELS[store] || storeLabel(store);
   badge.title = storeLabel(store);
   return badge;
@@ -984,6 +1102,11 @@ function compareReservationTime(a, b) {
 
 function storeLabel(store) {
   return STORE_LABELS[store] || store || "店舗未設定";
+}
+
+function formatDateWithWday(value) {
+  const date = parseDateKey(value);
+  return `${value}（${WDAYS[date.getDay()]}）`;
 }
 
 function syncMonthPicker() {
@@ -1046,7 +1169,7 @@ function createModal({ title, submitLabel, titleId }) {
       <div class="modal-body"></div>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" data-modal-cancel>キャンセル</button>
-        <button type="button" class="btn" data-modal-submit data-write="true">${escapeText(submitLabel)}</button>
+        <button type="button" class="btn" data-modal-submit data-write="true"${isDegraded() ? " disabled" : ""}>${escapeText(submitLabel)}</button>
       </div>
     </div>
   `;
