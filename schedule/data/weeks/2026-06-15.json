@@ -227,11 +227,56 @@
     },
     {
       "date": "2026-06-19",
-      "day_status": "event",
+      "day_status": "open",
       "location_code": null,
-      "event_name": "テストマルシェ",
-      "event_venue": "テスト公園",
-      "slots": []
+      "location_label": null,
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "11:00",
+          "status": "open"
+        },
+        {
+          "start": "11:00",
+          "end": "12:00",
+          "status": "open"
+        },
+        {
+          "start": "12:00",
+          "end": "13:00",
+          "status": "open"
+        },
+        {
+          "start": "13:00",
+          "end": "14:00",
+          "status": "open"
+        },
+        {
+          "start": "14:00",
+          "end": "15:00",
+          "status": "open"
+        },
+        {
+          "start": "15:00",
+          "end": "16:00",
+          "status": "open"
+        },
+        {
+          "start": "16:00",
+          "end": "17:00",
+          "status": "open"
+        },
+        {
+          "start": "17:00",
+          "end": "18:00",
+          "status": "open"
+        },
+        {
+          "start": "18:00",
+          "end": "19:00",
+          "status": "open"
+        }
+      ]
     },
     {
       "date": "2026-06-20",
@@ -288,11 +333,58 @@
     },
     {
       "date": "2026-06-21",
-      "day_status": "closed_weekday",
+      "day_status": "open",
       "location_code": null,
-      "slots": []
+      "location_label": null,
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "11:00",
+          "status": "open"
+        },
+        {
+          "start": "11:00",
+          "end": "12:00",
+          "status": "open"
+        },
+        {
+          "start": "12:00",
+          "end": "13:00",
+          "status": "open"
+        },
+        {
+          "start": "13:00",
+          "end": "14:00",
+          "status": "open"
+        },
+        {
+          "start": "14:00",
+          "end": "15:00",
+          "status": "open"
+        },
+        {
+          "start": "15:00",
+          "end": "16:00",
+          "status": "open"
+        },
+        {
+          "start": "16:00",
+          "end": "17:00",
+          "status": "open"
+        },
+        {
+          "start": "17:00",
+          "end": "18:00",
+          "status": "open"
+        },
+        {
+          "start": "18:00",
+          "end": "19:00",
+          "status": "open"
+        }
+      ]
     }
   ],
-  "generated_at": "2026-05-31T18:50:25+09:00",
-  "source_version": "v1"
+  "generated_at": "2026-05-31T23:39:16+09:00",
+  "source_version": "node-v1"
 }
