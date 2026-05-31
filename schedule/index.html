@@ -321,9 +321,7 @@ function render() {
 
     let badge = "";
     if (data) {
-      if (data.day_status === "closed_weekday") {
-        badge = `<span class="closed-badge">休</span>`;
-      } else if (data.day_status === "event") {
+      if (data.day_status === "event") {
         badge = `<span class="event-badge">イベント</span>`;
       } else if (data.location_code) {
         badge = `<span class="store-badge">${STORE_SHORT[data.location_code] || ""}</span>`;
@@ -343,7 +341,7 @@ function render() {
     html += `<div class="cal-row${altCls}">`;
     html += `<div class="cal-time">${escapeHtml(t)}</div>`;
     days.forEach(({ data }) => {
-      if (!data || data.day_status === "closed_weekday" || data.day_status === "event") {
+      if (!data || data.day_status === "event") {
         html += `<div class="cal-cell none">×</div>`;
         return;
       }
