@@ -58,21 +58,35 @@ jobs:
           echo "start_monday=${START_MONDAY}" >> "$GITHUB_OUTPUT"
           echo "Computed start_monday: ${START_MONDAY}"
 
-      - name: Fetch availability from GAS export API
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install --silent
+
+      - name: Generate availability from Firestore (Node + Firebase Admin SDK)
         env:
-          GAS_DEPLOYMENT_ID: AKfycby5MoObvujeXpiSmS-6KW4ABVP3T2zvu9BHHNEWOSGdGAf3BypNALW0r5CD3yBjSnPoJg
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           START_MONDAY: ${{ steps.monday.outputs.start_monday }}
+          WEEK_COUNT: '8'
         run: |
           set -e
           mkdir -p schedule/data/weeks
-          URL="https://script.google.com/macros/s/${GAS_DEPLOYMENT_ID}/exec?path=api/availability-export&start_monday=${START_MONDAY}&count=8"
-          echo "GET ${URL}"
-          # -L で 302 redirect 追従、-f で HTTP エラー時に exit
-          curl -sLf --max-time 60 "${URL}" -o /tmp/export.json
-          echo "Fetched $(wc -c < /tmp/export.json) bytes"
-          # 簡易 sanity check：ok=true かつ weeks 配列が存在すること
+          if [ -z "${FIREBASE_SERVICE_ACCOUNT_JSON}" ]; then
+            echo "ERROR: FIREBASE_SERVICE_ACCOUNT_JSON secret is not set" >&2
+            exit 1
+          fi
+          node scripts/generate-availability.mjs > /tmp/export.json 2>/tmp/export.err
+          echo "Generated $(wc -c < /tmp/export.json) bytes"
+          if [ -s /tmp/export.err ]; then
+            echo "--- stderr ---"
+            cat /tmp/export.err
+          fi
+          # sanity check：ok=true かつ weeks 配列が存在すること
           if ! jq -e '.ok == true and (.weeks | length > 0)' /tmp/export.json > /dev/null; then
-            echo "ERROR: invalid response from GAS export API"
+            echo "ERROR: invalid response from Node generator" >&2
             cat /tmp/export.json
             exit 1
           fi
