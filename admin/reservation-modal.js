@@ -20,6 +20,151 @@ const COURSE_OPTIONS = [
 const OPEN_MINUTES = 9 * 60;
 const CLOSE_MINUTES = 21 * 60;
 
+/**
+ * mountReservationForm — schedule modal 内インライン版。
+ * popup overlay を作らず、container（DOM 要素）に form を mount する。
+ * submit ボタンは caller 側（schedule modal の sub-footer）が持ち、
+ * 戻り値 submit() を呼ぶ。submit() は { ok: boolean, ...} を返す。
+ */
+export function mountReservationForm({ container, existing = null, presetDate = null } = {}) {
+  const initial = normalizeExisting(existing, presetDate);
+  const form = document.createElement("form");
+  form.className = "modal-form";
+  form.noValidate = true;
+  form.innerHTML = `
+    <div class="form-grid">
+      <label class="form-field">
+        <span>日付<em class="form-required" aria-hidden="true">必須</em></span>
+        <input type="date" name="visit_date" value="${escapeAttr(initial.visit_date)}" required aria-required="true">
+      </label>
+      <label class="form-field">
+        <span>開始時刻<em class="form-required" aria-hidden="true">必須</em></span>
+        <select name="start_time" required aria-required="true">${timeOptions(initial.start_time, false)}</select>
+      </label>
+      <fieldset class="form-fieldset">
+        <legend>コース<em class="form-required" aria-hidden="true">必須</em></legend>
+        <div class="radio-row">${radioOptions("course_code", COURSE_OPTIONS, initial.course_code)}</div>
+      </fieldset>
+      <label class="form-field">
+        <span>終了時刻<em class="form-hint" aria-hidden="true">自動</em></span>
+        <input type="text" name="end_time" value="${escapeAttr(initial.end_time)}" readonly>
+      </label>
+      <fieldset class="form-fieldset">
+        <legend>店舗<em class="form-required" aria-hidden="true">必須</em></legend>
+        <div class="radio-row">${radioOptions("store_code", STORE_OPTIONS, initial.store_code)}</div>
+        <p class="form-note" data-store-lock-note hidden></p>
+      </fieldset>
+      <label class="form-field">
+        <span>お名前<em class="form-required" aria-hidden="true">必須</em></span>
+        <input type="text" name="customer_name" value="${escapeAttr(initial.customer_name)}" required aria-required="true">
+      </label>
+      <label class="form-field">
+        <span>電話番号<em class="form-hint" aria-hidden="true">任意</em></span>
+        <input type="tel" name="customer_phone" value="${escapeAttr(initial.customer_phone)}">
+      </label>
+      <label class="form-field form-field-wide">
+        <span>メモ<em class="form-hint" aria-hidden="true">任意</em></span>
+        <textarea name="note" rows="3">${escapeText(initial.note)}</textarea>
+      </label>
+    </div>
+    <p class="form-error" data-form-error hidden></p>
+  `;
+  container.appendChild(form);
+  form.addEventListener("input", () => updateEndTime(form));
+  form.addEventListener("change", () => updateEndTime(form));
+  setupStoreAvailability(form, existing);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await submit();
+  });
+
+  updateEndTime(form);
+  refreshStoreAvailability(form);
+
+  let busy = false;
+  async function submit() {
+    if (busy) return { ok: false };
+    busy = true;
+    const error = form.querySelector("[data-form-error]");
+    setError(error, "");
+    try {
+      const values = readReservationForm(form);
+      const message = await validateReservation(values, existing?.id || existing?.reservation_id);
+      if (message) {
+        setError(error, message);
+        busy = false;
+        return { ok: false };
+      }
+      const id = existing?.id || existing?.reservation_id || `rsv_${randomHex(12)}`;
+      const target = `reservations/${id}`;
+      if (existing) {
+        await commitWrite({
+          op: "updateReservation",
+          domain: {
+            collection: "reservations",
+            docId: id,
+            action: "update",
+            data: {
+              visit_date: values.visit_date,
+              start_time: values.start_time,
+              end_time: values.end_time,
+              store_code: values.store_code,
+              course_code: values.course_code,
+              customer_name: values.customer_name,
+              customer_phone: values.customer_phone,
+              note: values.note,
+              updated_at: serverTimestamp(),
+            },
+          },
+          inverse: { op: "update", target, data: stripId(existing) },
+          target,
+          dispatchSource: "admin_reservation_update",
+        });
+      } else {
+        await commitWrite({
+          op: "createReservation",
+          domain: {
+            collection: "reservations",
+            docId: id,
+            action: "set",
+            data: {
+              reservation_id: id,
+              created_at: serverTimestamp(),
+              updated_at: serverTimestamp(),
+              status: "active",
+              visit_date: values.visit_date,
+              start_time: values.start_time,
+              end_time: values.end_time,
+              store_code: values.store_code,
+              course_code: values.course_code,
+              customer_name: values.customer_name,
+              customer_phone: values.customer_phone,
+              customer_line_user_id: "",
+              customer_line_display_name: "",
+              source: "manual",
+              cancel_token_hash: "",
+              note: values.note,
+            },
+          },
+          inverse: { op: "delete", target },
+          target,
+          dispatchSource: "admin_reservation_create",
+        });
+      }
+      busy = false;
+      return { ok: true };
+    } catch (err) {
+      console.error("reservation write failed", err);
+      setError(error, err.message || "保存に失敗しました");
+      busy = false;
+      return { ok: false };
+    }
+  }
+
+  return { form, submit, dispose: () => form.remove() };
+}
+
 export function openReservationModal({ mode, presetDate, existing } = {}) {
   const isEdit = mode === "edit";
   const initial = normalizeExisting(existing, presetDate);

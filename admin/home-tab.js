@@ -9,7 +9,7 @@ import {
   limit,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { cancelReservation, openReservationModal } from "./reservation-modal.js";
+import { cancelReservation, mountReservationForm } from "./reservation-modal.js";
 import { commitWrite } from "./write-helpers.js";
 import { isDegraded } from "./degraded.js";
 
@@ -183,12 +183,24 @@ function buildScheduleModalDom() {
           </div>
           <div class="row-list" id="homeSelectedBlockList"></div>
         </section>
+        <section class="schedule-sub-view" id="homeScheduleSubView" hidden aria-labelledby="homeScheduleSubTitle">
+          <div class="schedule-sub-head">
+            <h4 id="homeScheduleSubTitle" data-sub-title>予約を編集</h4>
+          </div>
+          <div class="schedule-sub-body" data-sub-body></div>
+        </section>
       </div>
-      <footer class="modal-footer">
+      <footer class="modal-footer" id="homeScheduleMainFooter">
         <button type="button" class="btn btn-danger btn-compact" id="homeDeleteSchedule" data-write="true">営業予定を削除</button>
         <div class="modal-footer-primary">
           <button type="button" class="btn btn-secondary btn-compact" data-schedule-modal-close>キャンセル</button>
           <button type="submit" class="btn btn-compact" form="homeScheduleForm" data-write="true">保存</button>
+        </div>
+      </footer>
+      <footer class="modal-footer schedule-sub-footer" id="homeScheduleSubFooter" hidden>
+        <div class="modal-footer-primary">
+          <button type="button" class="btn btn-secondary btn-compact" data-sub-cancel>← 戻る</button>
+          <button type="button" class="btn btn-compact" data-sub-submit data-write="true">保存</button>
         </div>
       </footer>
     </div>
@@ -295,11 +307,19 @@ function setupWriteButtons() {
   });
 
   document.getElementById("homeAddReservation")?.addEventListener("click", () => {
-    openReservationModal({ mode: "create", presetDate: selectedDate });
+    enterScheduleSubView({
+      title: "予約を追加",
+      submitLabel: "追加",
+      mount: (container) => mountReservationForm({ container, existing: null, presetDate: selectedDate }),
+    });
   });
 
   document.getElementById("homeAddBlock")?.addEventListener("click", () => {
-    openBlockModal();
+    enterScheduleSubView({
+      title: "予約不可を追加",
+      submitLabel: "追加",
+      mount: (container) => mountBlockForm({ container, existing: null }),
+    });
   });
 
   document.getElementById("homeScheduleForm")?.addEventListener("submit", async (event) => {
@@ -329,7 +349,12 @@ function setupWriteButtons() {
 
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
-    if (!isScheduleModalOpen() || isChildModalOpen()) return;
+    if (!isScheduleModalOpen()) return;
+    if (isScheduleSubViewOpen()) {
+      exitScheduleSubView();
+      return;
+    }
+    if (isChildModalOpen()) return;
     closeScheduleModal();
   });
 }
@@ -349,10 +374,94 @@ function closeScheduleModal() {
   const backdrop = document.getElementById("homeScheduleModalBackdrop");
   if (!backdrop) return;
 
+  exitScheduleSubView({ silent: true });
   formDirty = false;
   backdrop.classList.remove("is-open");
   backdrop.setAttribute("aria-hidden", "true");
   document.getElementById("homeOpenScheduleModal")?.focus();
+}
+
+let activeSubViewInstance = null;
+
+function enterScheduleSubView({ title, submitLabel, mount }) {
+  const backdrop = document.getElementById("homeScheduleModalBackdrop");
+  if (!backdrop) return;
+  if (activeSubViewInstance) exitScheduleSubView({ silent: true });
+
+  const body = backdrop.querySelector(".modal-body");
+  const mainFooter = document.getElementById("homeScheduleMainFooter");
+  const subView = document.getElementById("homeScheduleSubView");
+  const subFooter = document.getElementById("homeScheduleSubFooter");
+  if (!body || !mainFooter || !subView || !subFooter) return;
+
+  [...body.children].forEach((child) => {
+    if (child === subView) return;
+    if (!child.hidden) {
+      child.dataset.hiddenBySub = "true";
+      child.hidden = true;
+    }
+  });
+  mainFooter.hidden = true;
+  subView.hidden = false;
+  subFooter.hidden = false;
+  subView.querySelector("[data-sub-title]").textContent = title;
+  const submitBtn = subFooter.querySelector("[data-sub-submit]");
+  const cancelBtn = subFooter.querySelector("[data-sub-cancel]");
+  submitBtn.textContent = submitLabel;
+  submitBtn.disabled = isDegraded();
+
+  const subBody = subView.querySelector("[data-sub-body]");
+  subBody.innerHTML = "";
+  const instance = mount(subBody);
+  activeSubViewInstance = { instance, subView, subFooter, body, mainFooter, submitBtn, cancelBtn };
+
+  const onSubmit = async () => {
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    try {
+      const result = await instance.submit();
+      if (result && result.ok) {
+        exitScheduleSubView();
+      } else {
+        submitBtn.disabled = isDegraded();
+      }
+    } catch (err) {
+      console.error("sub-view submit failed", err);
+      submitBtn.disabled = isDegraded();
+    }
+  };
+  const onCancel = () => exitScheduleSubView();
+
+  submitBtn.onclick = onSubmit;
+  cancelBtn.onclick = onCancel;
+  activeSubViewInstance.onSubmit = onSubmit;
+  activeSubViewInstance.onCancel = onCancel;
+
+  subBody.querySelector("input, select, textarea, button")?.focus();
+}
+
+function exitScheduleSubView({ silent = false } = {}) {
+  if (!activeSubViewInstance) return;
+  const { instance, subView, subFooter, body, mainFooter, submitBtn, cancelBtn } = activeSubViewInstance;
+
+  submitBtn.onclick = null;
+  cancelBtn.onclick = null;
+  if (instance.dispose) instance.dispose();
+  subView.hidden = true;
+  subFooter.hidden = true;
+  mainFooter.hidden = false;
+  [...body.children].forEach((child) => {
+    if (child.dataset.hiddenBySub === "true") {
+      child.hidden = false;
+      delete child.dataset.hiddenBySub;
+    }
+  });
+  activeSubViewInstance = null;
+  if (!silent) renderSelectedDetails();
+}
+
+function isScheduleSubViewOpen() {
+  return Boolean(activeSubViewInstance);
 }
 
 function isScheduleModalOpen() {
@@ -784,7 +893,11 @@ function reservationActionButton(label, action, reservation) {
   button.setAttribute("aria-label", action === "cancel" ? "予約をキャンセル" : "予約を編集");
   button.addEventListener("click", async () => {
     if (action === "edit") {
-      openReservationModal({ mode: "edit", existing: reservation });
+      enterScheduleSubView({
+        title: "予約を編集",
+        submitLabel: "保存",
+        mount: (container) => mountReservationForm({ container, existing: reservation }),
+      });
       return;
     }
 
@@ -849,7 +962,11 @@ function blockEditButton(block) {
   button.className = "btn btn-secondary btn-row";
   button.textContent = "編集";
   button.dataset.write = "true";
-  button.addEventListener("click", () => openBlockModal(block));
+  button.addEventListener("click", () => enterScheduleSubView({
+    title: "予約不可を編集",
+    submitLabel: "保存",
+    mount: (container) => mountBlockForm({ container, existing: block }),
+  }));
   return button;
 }
 
@@ -947,13 +1064,7 @@ function validateSchedule(values) {
   return "";
 }
 
-function openBlockModal(existing = null) {
-  const isEdit = Boolean(existing);
-  const modal = createModal({
-    title: isEdit ? "予約不可を編集" : "予約不可を追加",
-    submitLabel: isEdit ? "保存" : "追加",
-    titleId: "homeBlockModalTitle",
-  });
+function mountBlockForm({ container, existing = null }) {
   const initial = {
     start_time: existing?.start_time || "09:00",
     end_time: existing?.end_time || "10:00",
@@ -983,62 +1094,63 @@ function openBlockModal(existing = null) {
     </div>
     <p class="form-error" data-form-error hidden></p>
   `;
-
-  modal.body.appendChild(form);
-  modal.submitButton.addEventListener("click", () => form.requestSubmit());
+  container.appendChild(form);
   form.querySelectorAll("[data-preset]").forEach((button) => {
     button.addEventListener("click", () => applyPreset(form, button.dataset.preset));
   });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    await submitBlockForm({ form, modal, existing });
+    await submit();
   });
-  showModal(modal);
-}
 
-async function submitBlockForm({ form, modal, existing }) {
-  const error = form.querySelector("[data-form-error]");
-  setError(error, "");
-  modal.submitButton.disabled = true;
-
-  try {
-    const values = readBlockForm(form);
-    const message = await validateBlock(values, existing?.id);
-    if (message) {
-      setError(error, message);
-      modal.submitButton.disabled = false;
-      return;
-    }
-
-    const id = existing?.id || `${values.date}_${values.start_time}_${values.end_time}`;
-    const target = `blocks/${id}`;
-    await commitWrite({
-      op: existing ? "updateBlock" : "addBlock",
-      domain: {
-        collection: "blocks",
-        docId: id,
-        action: existing ? "update" : "set",
-        data: {
-          date: values.date,
-          start_time: values.start_time,
-          end_time: values.end_time,
-          active: true,
-          created_at: existing?.created_at || serverTimestamp(),
-          updated_at: serverTimestamp(),
+  let busy = false;
+  async function submit() {
+    if (busy) return { ok: false };
+    busy = true;
+    const error = form.querySelector("[data-form-error]");
+    setError(error, "");
+    try {
+      const values = readBlockForm(form);
+      const message = await validateBlock(values, existing?.id);
+      if (message) {
+        setError(error, message);
+        busy = false;
+        return { ok: false };
+      }
+      const id = existing?.id || `${values.date}_${values.start_time}_${values.end_time}`;
+      const target = `blocks/${id}`;
+      await commitWrite({
+        op: existing ? "updateBlock" : "addBlock",
+        domain: {
+          collection: "blocks",
+          docId: id,
+          action: existing ? "update" : "set",
+          data: {
+            date: values.date,
+            start_time: values.start_time,
+            end_time: values.end_time,
+            active: true,
+            created_at: existing?.created_at || serverTimestamp(),
+            updated_at: serverTimestamp(),
+          },
         },
-      },
-      inverse: existing
-        ? { op: "update", target, data: stripId(existing) }
-        : { op: "delete", target },
-      target,
-      dispatchSource: existing ? "admin_block_update" : "admin_block_add",
-    });
-    closeModal(modal);
-  } catch (errorObject) {
-    console.error("block write failed", errorObject);
-    setError(error, errorObject.message || "保存に失敗しました");
-    modal.submitButton.disabled = false;
+        inverse: existing
+          ? { op: "update", target, data: stripId(existing) }
+          : { op: "delete", target },
+        target,
+        dispatchSource: existing ? "admin_block_update" : "admin_block_add",
+      });
+      busy = false;
+      return { ok: true };
+    } catch (err) {
+      console.error("block write failed", err);
+      setError(error, err.message || "保存に失敗しました");
+      busy = false;
+      return { ok: false };
+    }
   }
+
+  return { form, submit, dispose: () => form.remove() };
 }
 
 function readBlockForm(form) {
