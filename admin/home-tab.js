@@ -551,11 +551,12 @@ function renderSelectedInlineList() {
 
   list.hidden = false;
   items.forEach((item) => {
-    if (item.type === "reservation") {
-      list.appendChild(reservationRow(item.value));
-    } else {
-      list.appendChild(blockRow(item.value));
-    }
+    const row = item.type === "reservation"
+      ? reservationRow(item.value)
+      : blockRow(item.value);
+    const actions = row.querySelector(".row-actions");
+    if (actions) actions.remove();
+    list.appendChild(row);
   });
 
   if (selectedBlocksError) {
