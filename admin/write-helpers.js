@@ -12,7 +12,7 @@ export async function commitWrite({ op, domain, inverse, target, dispatchSource 
   assertNotDegraded();
 
   const user = auth.currentUser;
-  if (!user) throw new Error("not authenticated");
+  if (!user) throw new Error("ログインが必要です");
 
   let newRevision;
   await runTransaction(db, async (tx) => {
@@ -36,7 +36,7 @@ export async function commitWrite({ op, domain, inverse, target, dispatchSource 
     } else if (domain.action === "delete") {
       tx.delete(domainRef);
     } else {
-      throw new Error(`unsupported domain action: ${domain.action}`);
+      throw new Error(`不明な操作です（${domain.action}）`);
     }
 
     const logRef = doc(collection(db, "admin_log"));
@@ -107,7 +107,7 @@ async function fireDispatch(revision, source) {
 
 export async function logSkipOnly({ action, target, reason }) {
   const user = auth.currentUser;
-  if (!user) throw new Error("not authenticated");
+  if (!user) throw new Error("ログインが必要です");
 
   const logRef = doc(collection(db, "admin_log"));
   // M-B4 (rejected) と同じ理由で actor 単一フィールド維持（rules hasOnly() 違反回避）

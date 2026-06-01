@@ -13,7 +13,7 @@ import { commitWrite, logSkipOnly } from "./write-helpers.js";
 
 const SKIP_ACTION = "undo_attempted_but_skipped";
 const CONFLICT_MESSAGE =
-  "他の管理者が既に変更しています。undo を実行すると最新変更が失われます。続行しますか？";
+  "他の管理者が既に変更しています。元に戻す操作を実行すると最新変更が失われます。続行しますか？";
 
 export async function getLatestUndoableLog() {
   const logs = await getRecentActorLogs();
@@ -77,7 +77,7 @@ export async function executeRedo() {
 
 async function getRecentActorLogs() {
   const user = auth.currentUser;
-  if (!user) throw new Error("not authenticated");
+  if (!user) throw new Error("ログインが必要です");
 
   const snapshot = await getDocs(
     query(
@@ -92,16 +92,16 @@ async function getRecentActorLogs() {
 
 function normalizeOperation(operation) {
   if (!operation || typeof operation !== "object") {
-    throw new Error("inverse_operation が空です");
+    throw new Error("元に戻す操作の情報が空です");
   }
   if (!["create", "update", "delete"].includes(operation.op)) {
-    throw new Error(`unsupported inverse operation: ${operation.op || "unknown"}`);
+    throw new Error(`未対応の履歴操作です（${operation.op || "不明"}）`);
   }
   if (!operation.target || !parseTarget(operation.target)) {
-    throw new Error("inverse_operation.target が不正です");
+    throw new Error("元に戻す操作の対象が不正です");
   }
   if ((operation.op === "create" || operation.op === "update") && !operation.data) {
-    throw new Error("inverse_operation.data がありません");
+    throw new Error("元に戻す操作の保存内容がありません");
   }
   return operation;
 }
@@ -138,7 +138,7 @@ function inferPrecondition(operation) {
 
 function domainFromOperation(operation) {
   const target = parseTarget(operation.target);
-  if (!target) throw new Error("target が不正です");
+  if (!target) throw new Error("操作対象が不正です");
 
   if (operation.op === "delete") {
     return {
@@ -164,16 +164,13 @@ function buildInverseForAppliedOperation(operation, targetSnap) {
     };
   }
 
+  // L-C3 note: targetSnap が exists()=false の場合は「元 update 対象の doc が既に削除された」状態。
+  // 現状は空 data の create を試みるが、firestore.rules の hasAll(required fields) check で
+  // 必ず reject される（spec §3.8 completeness 観点での既知 edge case）。
+  // ユーザー視点: 「他端末で削除済の予約を undo しようとした」シナリオで「保存失敗」エラー表示になる。
+  // 改善候補: 本ケースを早期検知して conflict 専用 modal で「対象が既に削除されています」を表示する。
+  // 現状は rules reject に依存（複数 admin 並行操作の最終防衛ライン）・実害は限定的。
   if (!targetSnap.exists()) {
-    // L-C3 (RESOLVED-as-deferred 2026-05-26): targetSnap.exists()=false 経路は
-    // 「他 admin が delete 済み」のレアケースで、tenman 運用（yuko + tenman さん
-    // 1 人ずつ・admin 同時操作なし）では事実上発生しない。万一発生しても data:{}
-    // を redo 適用する時、commitWrite() (write-helpers.js:18) が common4 を後付け
-    // しても、firestore.rules の collection 固有必須フィールド (例: reservations
-    // なら reservation_id / customer_name / start_time 等の hasAll allowlist) を
-    // 満たさず **Rules reject される** ため、本番では undo 失敗の UX 劣化で止まり
-    // data 整合性は守られる。Phase D で複数 admin 同時運用に拡張する時に
-    // undo skip + admin_log 記録の正式 semantics を再設計予定。
     return {
       op: "create",
       target: operation.target,

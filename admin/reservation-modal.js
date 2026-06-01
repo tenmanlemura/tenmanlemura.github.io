@@ -19,6 +19,7 @@ const COURSE_OPTIONS = [
 ];
 const OPEN_MINUTES = 9 * 60;
 const CLOSE_MINUTES = 21 * 60;
+const EMPTY_ERROR_MESSAGE = "";
 
 /**
  * mountReservationForm — schedule modal 内インライン版。
@@ -87,7 +88,7 @@ export function mountReservationForm({ container, existing = null, presetDate = 
     if (busy) return { ok: false };
     busy = true;
     const error = form.querySelector("[data-form-error]");
-    setError(error, "");
+    setError(error, EMPTY_ERROR_MESSAGE);
     try {
       const values = readReservationForm(form);
       const message = await validateReservation(values, existing?.id || existing?.reservation_id);
@@ -156,7 +157,7 @@ export function mountReservationForm({ container, existing = null, presetDate = 
       return { ok: true };
     } catch (err) {
       console.error("reservation write failed", err);
-      setError(error, err.message || "保存に失敗しました");
+      setError(error, userFacingErrorMessage(err, "保存に失敗しました"));
       busy = false;
       return { ok: false };
     }
@@ -230,7 +231,7 @@ export function openReservationModal({ mode, presetDate, existing } = {}) {
 }
 
 export async function cancelReservation(id) {
-  if (!id) throw new Error("reservation id is required");
+  if (!id) throw new Error("予約 ID が見つかりません");
 
   return commitWrite({
     op: "cancelReservation",
@@ -260,7 +261,7 @@ export async function cancelReservation(id) {
 
 async function submitReservationForm({ form, modal, existing }) {
   const error = form.querySelector("[data-form-error]");
-  setError(error, "");
+  setError(error, EMPTY_ERROR_MESSAGE);
   modal.submitButton.disabled = true;
 
   try {
@@ -339,7 +340,7 @@ async function submitReservationForm({ form, modal, existing }) {
     closeModal(modal);
   } catch (err) {
     console.error("reservation write failed", err);
-    setError(error, err.message || "保存に失敗しました");
+    setError(error, userFacingErrorMessage(err, "保存に失敗しました"));
     modal.submitButton.disabled = false;
   }
 }
@@ -604,6 +605,11 @@ function setError(node, message) {
   if (!node) return;
   node.textContent = message;
   node.hidden = !message;
+}
+
+function userFacingErrorMessage(error, fallback) {
+  const message = String(error?.message || "");
+  return /[ぁ-んァ-ヴ一-龯]/.test(message) ? message : fallback;
 }
 
 function stripId(value) {

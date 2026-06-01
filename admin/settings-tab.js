@@ -88,7 +88,7 @@ function setupUndoRedoButtons() {
       if (result.status === "done") {
         showUndoToast(`${targetLabel(log)}を元に戻しました`);
       } else if (result.status === "skipped") {
-        showUndoToast("undo を中止しました");
+        showUndoToast("元に戻す操作を中止しました");
       } else {
         showUndoToast("元に戻せる操作がありません");
       }
@@ -115,7 +115,7 @@ async function runHistoryAction(button, action) {
     await action();
   } catch (error) {
     console.error("history action failed", error);
-    showUndoToast(error.message || "履歴操作に失敗しました");
+    showUndoToast(userFacingErrorMessage(error, "履歴操作に失敗しました"));
   } finally {
     await refreshUndoRedoButtons();
   }
@@ -164,8 +164,8 @@ function targetLabel(log) {
 
 function actionLabel(action) {
   if (!action) return "操作";
-  if (action.startsWith("undo_of:")) return "undo";
-  if (action.startsWith("redo_of:")) return "redo";
+  if (action.startsWith("undo_of:")) return "元に戻す";
+  if (action.startsWith("redo_of:")) return "やり直し";
   return action;
 }
 
@@ -184,6 +184,11 @@ function showUndoToast(message) {
   showUndoToast.timer = setTimeout(() => {
     toast.hidden = true;
   }, 3600);
+}
+
+function userFacingErrorMessage(error, fallback) {
+  const message = String(error?.message || "");
+  return /[ぁ-んァ-ヴ一-龯]/.test(message) ? message : fallback;
 }
 
 function addKv(root, key, value) {

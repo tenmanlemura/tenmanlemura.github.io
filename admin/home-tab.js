@@ -32,6 +32,7 @@ const PLANNED_STORES = [
 const OPEN_MINUTES = 9 * 60;
 const CLOSE_MINUTES = 21 * 60;
 const YEAR_PICKER_RADIUS = 5;
+const EMPTY_ERROR_MESSAGE = "";
 
 let initialized = false;
 let built = false;
@@ -497,7 +498,7 @@ function subscribeMonthData() {
     },
     (error) => {
       console.error("reservations listener failed", error);
-      setMonthStatus(`予約の読み込みに失敗しました: ${error.message}`);
+      setMonthStatus(userFacingErrorMessage(error, "予約の読み込みに失敗しました"));
     },
   );
 
@@ -520,7 +521,7 @@ function subscribeMonthData() {
     },
     (error) => {
       console.error("schedules listener failed", error);
-      setMonthStatus(`営業予定の読み込みに失敗しました: ${error.message}`);
+      setMonthStatus(userFacingErrorMessage(error, "営業予定の読み込みに失敗しました"));
     },
   );
 }
@@ -544,7 +545,7 @@ function subscribeSelectedBlocks(date) {
     },
     (error) => {
       console.error("selected blocks listener failed", error);
-      selectedBlocksError = error.message;
+      selectedBlocksError = userFacingErrorMessage(error, "予約不可の読み込みに失敗しました");
       renderSelectedDetails();
     },
   );
@@ -669,7 +670,7 @@ function renderSelectedInlineList() {
   });
 
   if (selectedBlocksError) {
-    list.appendChild(emptyRow(`予約不可の読み込みに失敗しました: ${selectedBlocksError}`));
+    list.appendChild(emptyRow(selectedBlocksError));
   }
 }
 
@@ -731,7 +732,8 @@ function renderSelectedSchedule() {
 
   const deleteButton = document.getElementById("homeDeleteSchedule");
   if (deleteButton) deleteButton.disabled = !schedule?.id;
-  setError(form.querySelector("[data-schedule-error]"), "");
+  const scheduleErrorNode = form.querySelector('[data-schedule-error]');
+  setError(scheduleErrorNode, EMPTY_ERROR_MESSAGE);
   syncScheduleEventFields();
 }
 
@@ -784,7 +786,7 @@ function renderSelectedBlockList() {
     });
 
   if (selectedBlocksError) {
-    list.appendChild(emptyRow(`予約不可の読み込みに失敗しました: ${selectedBlocksError}`));
+    list.appendChild(emptyRow(selectedBlocksError));
   }
 }
 
@@ -908,7 +910,7 @@ function reservationActionButton(label, action, reservation) {
       await cancelReservation(id);
     } catch (error) {
       console.error("cancel reservation failed", error);
-      alert(error.message || "キャンセルに失敗しました");
+      alert(userFacingErrorMessage(error, "キャンセルに失敗しました"));
       button.disabled = false;
     }
   });
@@ -949,7 +951,7 @@ function blockDeleteButton(block) {
       });
     } catch (error) {
       console.error("delete block failed", error);
-      alert(error.message || "削除に失敗しました");
+      alert(userFacingErrorMessage(error, "削除に失敗しました"));
       button.disabled = false;
     }
   });
@@ -972,7 +974,7 @@ function blockEditButton(block) {
 
 async function submitSelectedSchedule(form) {
   const error = form.querySelector("[data-schedule-error]");
-  setError(error, "");
+  setError(error, EMPTY_ERROR_MESSAGE);
   const submitButton = form.querySelector('button[type="submit"]');
   if (submitButton) submitButton.disabled = true;
 
@@ -1013,7 +1015,7 @@ async function submitSelectedSchedule(form) {
     formDirty = false;
   } catch (errorObject) {
     console.error("schedule write failed", errorObject);
-    setError(error, errorObject.message || "保存に失敗しました");
+    setError(error, userFacingErrorMessage(errorObject, "保存に失敗しました"));
   } finally {
     if (submitButton) submitButton.disabled = false;
   }
@@ -1044,7 +1046,7 @@ async function deleteSelectedSchedule() {
     formDirty = false;
   } catch (error) {
     console.error("delete schedule failed", error);
-    alert(error.message || "削除に失敗しました");
+    alert(userFacingErrorMessage(error, "削除に失敗しました"));
   }
 }
 
@@ -1108,7 +1110,7 @@ function mountBlockForm({ container, existing = null }) {
     if (busy) return { ok: false };
     busy = true;
     const error = form.querySelector("[data-form-error]");
-    setError(error, "");
+    setError(error, EMPTY_ERROR_MESSAGE);
     try {
       const values = readBlockForm(form);
       const message = await validateBlock(values, existing?.id);
@@ -1144,7 +1146,7 @@ function mountBlockForm({ container, existing = null }) {
       return { ok: true };
     } catch (err) {
       console.error("block write failed", err);
-      setError(error, err.message || "保存に失敗しました");
+      setError(error, userFacingErrorMessage(err, "保存に失敗しました"));
       busy = false;
       return { ok: false };
     }
@@ -1408,6 +1410,11 @@ function setError(node, message) {
   if (!node) return;
   node.textContent = message;
   node.hidden = !message;
+}
+
+function userFacingErrorMessage(error, fallback) {
+  const message = String(error?.message || "");
+  return /[ぁ-んァ-ヴ一-龯]/.test(message) ? message : fallback;
 }
 
 function timeRangesOverlap(startA, endA, startB, endB) {
