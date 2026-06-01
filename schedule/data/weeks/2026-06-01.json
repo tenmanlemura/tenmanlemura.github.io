@@ -22,12 +22,12 @@
         {
           "start": "10:00",
           "end": "11:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "11:00",
           "end": "12:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "12:00",
@@ -47,7 +47,7 @@
         {
           "start": "15:00",
           "end": "16:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "16:00",
@@ -75,12 +75,12 @@
         {
           "start": "10:00",
           "end": "11:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "11:00",
           "end": "12:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "12:00",
@@ -90,22 +90,22 @@
         {
           "start": "13:00",
           "end": "14:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "14:00",
           "end": "15:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "15:00",
           "end": "16:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "16:00",
           "end": "17:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "17:00",
@@ -121,49 +121,49 @@
     },
     {
       "date": "2026-06-03",
-      "day_status": "open",
-      "location_code": null,
-      "location_label": null,
+      "day_status": "limited",
+      "location_code": "tanushimaru",
+      "location_label": "田主丸店",
       "slots": [
         {
           "start": "10:00",
           "end": "11:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "11:00",
           "end": "12:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "12:00",
           "end": "13:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "13:00",
           "end": "14:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "14:00",
           "end": "15:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "15:00",
           "end": "16:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "16:00",
           "end": "17:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "17:00",
           "end": "18:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "18:00",
@@ -227,24 +227,24 @@
     },
     {
       "date": "2026-06-05",
-      "day_status": "open",
-      "location_code": null,
-      "location_label": null,
+      "day_status": "limited",
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
       "slots": [
         {
           "start": "10:00",
           "end": "11:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "11:00",
           "end": "12:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "12:00",
           "end": "13:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "13:00",
@@ -280,56 +280,11 @@
     },
     {
       "date": "2026-06-06",
-      "day_status": "open",
+      "day_status": "event",
       "location_code": null,
-      "location_label": null,
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "11:00",
-          "status": "open"
-        },
-        {
-          "start": "11:00",
-          "end": "12:00",
-          "status": "open"
-        },
-        {
-          "start": "12:00",
-          "end": "13:00",
-          "status": "open"
-        },
-        {
-          "start": "13:00",
-          "end": "14:00",
-          "status": "open"
-        },
-        {
-          "start": "14:00",
-          "end": "15:00",
-          "status": "open"
-        },
-        {
-          "start": "15:00",
-          "end": "16:00",
-          "status": "open"
-        },
-        {
-          "start": "16:00",
-          "end": "17:00",
-          "status": "open"
-        },
-        {
-          "start": "17:00",
-          "end": "18:00",
-          "status": "open"
-        },
-        {
-          "start": "18:00",
-          "end": "19:00",
-          "status": "open"
-        }
-      ]
+      "event_name": "田主丸マルシェ",
+      "event_venue": "",
+      "slots": []
     },
     {
       "date": "2026-06-07",
@@ -385,6 +340,6 @@
       ]
     }
   ],
-  "generated_at": "2026-06-01T07:37:11+09:00",
+  "generated_at": "2026-06-01T11:44:23+09:00",
   "source_version": "node-v1"
 }
