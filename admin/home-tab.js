@@ -720,7 +720,7 @@ function reservationRow(reservation) {
   name.textContent = reservation.customer_name || "名前未設定";
   const meta = document.createElement("span");
   meta.className = "row-meta";
-  meta.textContent = `${storeLabel(reservation.store_code)} / ${reservation.course_code || "course 未設定"}`;
+  meta.textContent = `${storeLabel(reservation.store_code)} / ${reservation.course_code ? `${reservation.course_code}分` : "course 未設定"}`;
   main.appendChild(name);
   main.appendChild(meta);
   row.appendChild(main);
