@@ -118,10 +118,11 @@ function buildHomeDom(root) {
         </div>
         <div class="x-summary" id="homeDaySummary">
           <span class="x-pill is-empty" data-summary-store>営業予定なし</span>
-          <span class="x-counts" data-summary-counts>予約 0 件 ／ 予約不可 0 件</span>
+          <span class="x-counts" data-summary-counts hidden></span>
           <button type="button" class="btn btn-secondary btn-compact x-summary-edit" id="homeOpenScheduleModal" data-write="true">営業予定を編集</button>
           <p class="x-note" data-summary-note hidden></p>
         </div>
+        <div class="row-list row-list-inline" id="homeSelectedInlineList" data-summary-inline-list hidden></div>
       </section>
     </div>
   `;
@@ -532,6 +533,34 @@ function renderSelectedDetails() {
   renderSelectedSchedule();
   renderSelectedReservationList();
   renderSelectedBlockList();
+  renderSelectedInlineList();
+}
+
+function renderSelectedInlineList() {
+  const list = document.getElementById("homeSelectedInlineList");
+  if (!list) return;
+
+  list.innerHTML = "";
+  const reservations = reservationsForDate(selectedDate);
+  const items = selectedDetailItems(reservations, selectedBlocks);
+
+  if (items.length === 0) {
+    list.hidden = true;
+    return;
+  }
+
+  list.hidden = false;
+  items.forEach((item) => {
+    if (item.type === "reservation") {
+      list.appendChild(reservationRow(item.value));
+    } else {
+      list.appendChild(blockRow(item.value));
+    }
+  });
+
+  if (selectedBlocksError) {
+    list.appendChild(emptyRow(`予約不可の読み込みに失敗しました: ${selectedBlocksError}`));
+  }
 }
 
 function renderDaySummary() {
@@ -547,7 +576,18 @@ function renderDaySummary() {
     storeNode.textContent = store ? storeLabel(store) : "営業予定なし";
   }
   if (countsNode) {
-    countsNode.textContent = `予約 ${reservations.length} 件 ／ 予約不可 ${selectedBlocks.length} 件`;
+    const rCount = reservations.length;
+    const bCount = selectedBlocks.length;
+    let countsText = "";
+    if (rCount > 0 && bCount > 0) {
+      countsText = `予約 ${rCount} 件 ／ 予約不可 ${bCount} 件`;
+    } else if (rCount > 0) {
+      countsText = `予約 ${rCount} 件`;
+    } else if (bCount > 0) {
+      countsText = `予約不可 ${bCount} 件`;
+    }
+    countsNode.textContent = countsText;
+    countsNode.hidden = countsText === "";
   }
   if (noteNode) {
     const note = schedule?.note || "";
