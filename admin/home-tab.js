@@ -683,8 +683,13 @@ function renderDaySummary() {
   const noteNode = document.querySelector("[data-summary-note]");
 
   if (storeNode) {
-    storeNode.className = `x-pill is-${store || "empty"}`;
-    storeNode.textContent = store ? storeLabel(store) : "営業予定なし";
+    if (store) {
+      storeNode.className = `x-pill is-${store}`;
+      storeNode.textContent = storeLabel(store);
+      storeNode.hidden = false;
+    } else {
+      storeNode.hidden = true;
+    }
   }
   if (countsNode) {
     const rCount = reservations.length;
