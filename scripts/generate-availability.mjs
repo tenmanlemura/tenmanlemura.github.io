@@ -53,6 +53,17 @@ const DEFAULT_WEEK_COUNT = 8;
 const MAX_WEEK_COUNT = 12;
 const JST_TIMEZONE = "Asia/Tokyo";
 
+// Firestore reads 計測用（推定値・実 reads とのキャリブレーションに使用）
+const readCounter = {
+  settings: 0,
+  schedules: 0,
+  blocks: 0,
+  reservations: 0,
+  get total() {
+    return this.settings + this.schedules + this.blocks + this.reservations;
+  },
+};
+
 async function main() {
   const startMonday = requireEnv("START_MONDAY");
   const baseDate = parseDateKey(startMonday);
@@ -79,6 +90,17 @@ async function main() {
   };
 
   process.stdout.write(JSON.stringify(payload) + "\n");
+
+  // Firestore reads 推定値を stderr に出力（workflow ログで確認可能）
+  // Firebase Console の当日 reads と照合してキャリブレーション用途
+  process.stderr.write(
+    `[read-counter] settings=${readCounter.settings} ` +
+    `schedules=${readCounter.schedules} ` +
+    `blocks=${readCounter.blocks} ` +
+    `reservations=${readCounter.reservations} ` +
+    `total=${readCounter.total} ` +
+    `week_count=${weekCount}\n`
+  );
 }
 
 function requireEnv(name) {
@@ -257,6 +279,7 @@ function groupReservationsByDate(reservations) {
 async function fetchSettings(db) {
   const result = { ...SETTINGS_DEFAULTS };
   const snap = await db.collection("settings").get();
+  readCounter.settings += snap.size;
   snap.docs.forEach((doc) => {
     const data = doc.data() || {};
     const key = data.key || doc.id;
@@ -276,6 +299,7 @@ async function fetchSchedules(db, startStr, endStr) {
     .where("date", "<=", endStr)
     .orderBy("date")
     .get();
+  readCounter.schedules += snap.size;
 
   snap.docs.forEach((doc) => {
     const data = doc.data() || {};
@@ -299,6 +323,7 @@ async function fetchBlocks(db, startStr, endStr) {
     .where("active", "==", true)
     .orderBy("date")
     .get();
+  readCounter.blocks += snap.size;
 
   snap.docs.forEach((doc) => {
     const data = doc.data() || {};
@@ -323,6 +348,7 @@ async function fetchReservations(db, startStr, endStr) {
     .where("status", "==", "active")
     .orderBy("visit_date")
     .get();
+  readCounter.reservations += snap.size;
 
   return snap.docs
     .map((doc) => {
