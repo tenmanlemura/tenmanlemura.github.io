@@ -8,8 +8,9 @@ on:
     - cron: '0 */6 * * *'
   repository_dispatch:
     # update-availability: 旧 ApiHandlers.gs triggerGitHubPagesUpdate（client_payload.revision なし・M1 移行中残置）
-    # firestore-update:    新 DispatchEndpoint.gs / Watchdog.gs（client_payload.revision あり・publish 完了通知発火）
-    types: [update-availability, firestore-update]
+    # firestore-update:    旧 DispatchEndpoint.gs / admin fireDispatch（client_payload.revision あり・publish 完了通知発火）
+    # build-availability:  新 Watchdog（案 X build_state）（client_payload.build_target_edited_at あり・revision なし）
+    types: [update-availability, firestore-update, build-availability]
   workflow_dispatch:
 
 permissions:
@@ -125,6 +126,21 @@ jobs:
           git add schedule/data/weeks/
           git commit -m "data: update availability $(TZ=Asia/Tokyo date +%Y-%m-%dT%H:%M%z)"
           git push
+
+      - name: Notify build_state of completion (build-availability only)
+        # 案 X: 新 Watchdog（build_state）起点のビルドのみ。commit/push の後に実行し、
+        # build_state を in_flight=false に戻して needs_build を解除する（途中編集は build_target と比較）。
+        if: github.event_name == 'repository_dispatch' && github.event.action == 'build-availability'
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          BUILD_TARGET_EDITED_AT: ${{ github.event.client_payload.build_target_edited_at }}
+        run: |
+          set -e
+          if [ -z "${FIREBASE_SERVICE_ACCOUNT_JSON}" ]; then
+            echo "ERROR: FIREBASE_SERVICE_ACCOUNT_JSON secret is not set" >&2
+            exit 1
+          fi
+          node scripts/notify-build-complete.mjs
 
       - name: Notify GAS of publish completion (firestore-update only)
         # PUBLISH_REVISION が空でない時のみ発火。cron / workflow_dispatch / [update-availability] では skip。

@@ -4,6 +4,7 @@ import {
   runTransaction,
   serverTimestamp,
   setDoc,
+  updateDoc,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, auth } from "./app.js";
 import { assertNotDegraded } from "./degraded.js";
@@ -72,11 +73,32 @@ export async function commitWrite({ op, domain, inverse, target, dispatchSource 
     }
   });
 
+  // build_state（案 X）: 編集があったことを記録する。Watchdog が debounce(3分)後に 1 回だけ
+  // build-availability dispatch する。data 書込トランザクションとは分離（best-effort・doc 不在や
+  // 失敗で予約保存自体を巻き込まない）。doc は seed 済前提なので update（全上書きで Watchdog の
+  // in_flight/disabled を踏まないよう needs_build/last_edited_at + common4 のみ書く）。
+  flagBuildNeeded(newRevision).catch((err) => {
+    console.warn("build_state flag update failed:", err);
+  });
+
+  // 旧 dispatch 第 1 線（移行期間中は build_state 経路と並走・S7 で削除予定）。
   fireDispatch(newRevision, dispatchSource).catch((err) => {
     console.warn("dispatch fire-and-forget failed:", err);
   });
 
   return newRevision;
+}
+
+async function flagBuildNeeded(revision) {
+  const buildStateRef = doc(db, "system/build_state");
+  await updateDoc(buildStateRef, {
+    needs_build: true,
+    last_edited_at: serverTimestamp(),
+    schema_version: 1,
+    written_by: "admin_spa",
+    written_at: serverTimestamp(),
+    source_revision: revision,
+  });
 }
 
 async function fireDispatch(revision, source) {
