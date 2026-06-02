@@ -2,8 +2,10 @@ name: Update availability JSON
 
 on:
   schedule:
-    # 5 分毎の補強更新（repository_dispatch 失敗時のセーフティネット）
-    - cron: '*/5 * * * *'
+    # 6 時間毎の補強更新（repository_dispatch 失敗時のセーフティネット・Firestore reads 削減）
+    # 即時反映は dispatch パイプライン（GAS → repository_dispatch）が担当。Watchdog 1 分 cron がリカバリ。
+    # cron は dispatch が完全停止した時の最終保険として残置。
+    - cron: '0 */6 * * *'
   repository_dispatch:
     # update-availability: 旧 ApiHandlers.gs triggerGitHubPagesUpdate（client_payload.revision なし・M1 移行中残置）
     # firestore-update:    新 DispatchEndpoint.gs / Watchdog.gs（client_payload.revision あり・publish 完了通知発火）
