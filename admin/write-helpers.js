@@ -98,6 +98,11 @@ async function fireDispatch(revision, source) {
   // exponential backoff retry: 0s（初回）+ 1s + 3s + 9s → 最大 4 試行・合計 ~13 秒
   // network 瞬断 / 5xx / 408 / 429 は retry。4xx（429/408 除く）は client error として即停止。
   // 全 retry 失敗時も throw しない（Watchdog 第 2 線が 1 分以内に補強発火する設計）。
+  //
+  // 重要：dispatch URL は GAS Web App（DispatchEndpoint.gs）。GAS の ContentService は HTTP 200 を返し、
+  // 実際の status は JSON body の {ok: bool, status: N} で表現される（DispatchEndpoint.gs::jsonResponse_）。
+  // したがって res.ok だけでは GAS 由来の 4xx/5xx を見逃す。JSON body も parse して effectiveStatus を判定する。
+  // body が JSON でない（302 redirect → googleusercontent 405 / empty body）場合は res.ok にフォールバック。
   const DELAYS_MS = [1000, 3000, 9000];
   let lastError = null;
   for (let attempt = 0; attempt <= DELAYS_MS.length; attempt += 1) {
@@ -108,16 +113,28 @@ async function fireDispatch(revision, source) {
         body,
         keepalive: true,
       });
-      if (res.ok) {
+
+      // GAS 由来の JSON body を優先判定。parse 失敗 / フィールド欠落時は HTTP status fallback。
+      let payload = null;
+      try {
+        const text = await res.text();
+        if (text) payload = JSON.parse(text);
+      } catch (_) {
+        payload = null;
+      }
+      const effectiveOk = payload && typeof payload.ok === "boolean" ? payload.ok : res.ok;
+      const effectiveStatus = payload && typeof payload.status === "number" ? payload.status : res.status;
+
+      if (effectiveOk) {
         if (attempt > 0) {
           console.log(`dispatch succeeded after ${attempt} retry(s) (revision=${revision})`);
         }
         return;
       }
-      lastError = new Error(`dispatch HTTP ${res.status}`);
+      lastError = new Error(`dispatch failed (status=${effectiveStatus})`);
       // 4xx は client error として即停止（408 timeout / 429 rate limit のみ retry）
-      if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
-        console.warn(`dispatch client error, no retry (HTTP ${res.status})`);
+      if (effectiveStatus >= 400 && effectiveStatus < 500 && effectiveStatus !== 408 && effectiveStatus !== 429) {
+        console.warn(`dispatch client error, no retry (status=${effectiveStatus})`);
         return;
       }
     } catch (err) {
