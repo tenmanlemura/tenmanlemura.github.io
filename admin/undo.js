@@ -51,7 +51,6 @@ export async function executeUndo(logEntry) {
     domain: domainFromOperation(operation),
     inverse: redoOperation,
     target: operation.target,
-    dispatchSource: "admin_undo",
   });
 
   return { status: "done", revision, logEntry: entry };
@@ -69,7 +68,6 @@ export async function executeRedo() {
     domain: domainFromOperation(operation),
     inverse: undoOperation,
     target: operation.target,
-    dispatchSource: "admin_redo",
   });
 
   return { status: "done", revision, logEntry: entry };
