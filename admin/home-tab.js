@@ -94,7 +94,7 @@ function buildHomeDom(root) {
       </div>
       <div class="rd-dow"><span class="sun">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="sat">土</span></div>
       <div class="rd-grid" id="rdGrid"></div>
-      <p class="rd-count-line" id="rdMonthStatus" style="text-align:right;margin:8px 2px 0;">読み込み中...</p>
+      <p class="rd-error-state" id="rdMonthStatus" hidden></p>
     </section>
 
     <div class="rd-divider"></div>
@@ -126,7 +126,7 @@ function buildOverlays() {
       <div class="rd-fab-inner">
         <div class="rd-fab-menu" id="rdFabMenu">
           <button type="button" class="rd-fab-action" id="rdFabAddBooking" data-write="true"><span class="ai add">${icon("plus", 17, 2.4)}</span>予約を追加</button>
-          <button type="button" class="rd-fab-action" id="rdFabAddBlock" data-write="true"><span class="ai block">${icon("noEntry", 17, 2.4)}</span>予約不可にする</button>
+          <button type="button" class="rd-fab-action" id="rdFabAddBlock" data-write="true"><span class="ai block">${icon("noEntry", 17, 2.4)}</span>予約を受けない時間</button>
         </div>
         <button type="button" class="rd-fab" id="rdFab" data-write="true" aria-label="追加">${icon("plus", 28, 2.4)}</button>
       </div>
@@ -138,14 +138,15 @@ function buildOverlays() {
     <div class="rd-sheet" id="rdSheetBooking" role="dialog" aria-modal="true">
       <div class="rd-sheet-head"><span class="rd-sheet-title" id="rdBkTitle">予約を追加</span><button type="button" class="rd-sheet-close" data-rd-close>${icon("x", 18, 2)}</button></div>
       <div class="rd-sheet-body">
+        <div class="rd-ctx" id="rdBkCtx">${icon("calendar", 16, 1.8)}<span id="rdBkCtxText"></span></div>
         <div class="rd-field"><label>お名前<span class="rd-req">必須</span></label><input class="rd-input" id="rdBkName" placeholder="例：小林 由美" autocomplete="off"></div>
+        <div class="rd-field" id="rdBkStoreField" hidden><label>お店<span class="rd-req">必須</span></label>
+          <div class="rd-toggle" id="rdBkStorePick"><button type="button" data-s="tanushimaru">田主丸店</button><button type="button" data-s="dazaifu">太宰府店</button></div>
+          <p class="rd-lock-note" style="margin-top:7px;">最初の予約で、この日のお店が決まります。</p>
+        </div>
         <div class="rd-field"><label>開始時刻<span class="rd-req">必須</span></label><div class="rd-sel-wrap"><select class="rd-select" id="rdBkStart"></select>${icon("chevDown", 18, 2)}</div></div>
         <div class="rd-field"><label>コース<span class="rd-req">必須</span></label><div class="rd-toggle" id="rdBkCourse"><button type="button" data-c="40">40分</button><button type="button" data-c="60">60分</button></div></div>
         <div class="rd-field"><div class="rd-end-note">${icon("clock", 16, 1.8)}終了時刻 <b id="rdBkEnd">--:--</b>（自動）</div></div>
-        <div class="rd-field" id="rdBkStoreField"><label>お店<span class="rd-req" id="rdBkStoreReq" hidden>必須</span></label>
-          <div id="rdBkStoreLocked" hidden><span class="rd-store-chip" id="rdBkStoreChip"><span class="sdot"></span><span id="rdBkStoreName">--</span></span><div class="rd-lock-note">${icon("lock", 14, 1.8)}<span id="rdBkLockMsg"></span></div></div>
-          <div class="rd-toggle" id="rdBkStorePick" hidden><button type="button" data-s="tanushimaru">田主丸店</button><button type="button" data-s="dazaifu">太宰府店</button></div>
-        </div>
         <div class="rd-field"><label>電話番号<span class="rd-opt">任意</span></label><input class="rd-input" id="rdBkTel" inputmode="tel" placeholder="例：090-1234-5678" autocomplete="off"></div>
         <div class="rd-field"><label>メモ<span class="rd-opt">任意</span></label><textarea class="rd-input" id="rdBkMemo" placeholder="お客さまについてのメモなど"></textarea></div>
         <p class="rd-form-error" id="rdBkError" hidden></p>
@@ -304,7 +305,7 @@ function subscribeMonthData() {
   const range = monthQueryRange(currentMonth);
   monthReservations = [];
   schedulesByDate = new Map();
-  setMonthStatus("読み込み中...");
+  setMonthStatus("");
 
   unsubscribeReservations = onSnapshot(
     query(
@@ -318,7 +319,7 @@ function subscribeMonthData() {
     (snap) => {
       monthReservations = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       renderHome();
-      setMonthStatus("リアルタイム同期中");
+      setMonthStatus("");
     },
     (err) => {
       console.error("reservations listener failed", err);
@@ -389,33 +390,37 @@ function renderCalendar() {
   grid.innerHTML = "";
 
   const first = startOfMonth(currentMonth);
-  const last = endOfMonth(currentMonth);
-  const start = startOfWeek(first);
-  const end = endOfWeek(last);
-  const today = todayKey();
+  const firstDow = first.getDay();
+  const daysInMonth = endOfMonth(currentMonth).getDate();
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
 
-  for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
-    const key = dateKey(day);
-    const inMonth = day.getMonth() === currentMonth.getMonth();
+  // プロトタイプ準拠：月初前は空セル・当月の日付のみ表示（前後月の日付は出さない）
+  for (let i = 0; i < firstDow; i += 1) {
+    const empty = document.createElement("div");
+    empty.className = "rd-day empty";
+    grid.appendChild(empty);
+  }
+
+  for (let d = 1; d <= daysInMonth; d += 1) {
+    const key = dateKey(new Date(year, month, d));
+    const dow = (firstDow + d - 1) % 7;
     const reservations = reservationsForDate(key);
     const schedule = schedulesByDate.get(key);
     const badge = resolveDayStore(schedule, reservations);
-    const dow = day.getDay();
 
     const cell = document.createElement("button");
     cell.type = "button";
     cell.className = "rd-day";
     if (dow === 0) cell.classList.add("sun");
     if (dow === 6) cell.classList.add("sat");
-    if (!inMonth) cell.classList.add("muted");
     if (key === selectedDate) cell.classList.add("sel");
-    if (key === today) cell.classList.add("today");
     cell.dataset.date = key;
 
     const meta = reservations.length > 0 || badge
       ? `<span class="meta">${badge ? `<span class="rd-dot ${STORE_CSS[badge]}"></span>` : ""}${reservations.length > 0 ? reservations.length : ""}</span>`
       : "";
-    cell.innerHTML = `<span class="dnum">${day.getDate()}</span>${meta}`;
+    cell.innerHTML = `<span class="dnum">${d}</span>${meta}`;
     cell.addEventListener("click", () => selectDate(key, false));
     grid.appendChild(cell);
   }
@@ -491,11 +496,10 @@ function bookingSlot(r) {
   btn.type = "button";
   btn.className = "rd-slot";
   const end = r.end_time || addMinutes(r.start_time, COURSE_MIN[String(r.course_code)] || 0);
-  const tel = r.customer_phone ? `<span class="rd-pill tel">電話あり</span>` : "";
   const course = r.course_code ? `<span class="rd-pill course">${escapeText(String(r.course_code))}分</span>` : "";
   btn.innerHTML = `
     <span class="time">${escapeText(r.start_time || "--:--")}<small>〜${escapeText(end || "--:--")}</small></span>
-    <span class="body"><span class="name">${escapeText(r.customer_name || "名前未設定")}</span><span class="tags">${course}${tel}</span></span>
+    <span class="body"><span class="name">${escapeText(r.customer_name || "名前未設定")}</span><span class="tags">${course}</span></span>
     <span class="chev">${icon("chevRight", 20, 2)}</span>`;
   btn.addEventListener("click", () => openBookingSheet(r));
   return btn;
@@ -518,6 +522,13 @@ function setFab(open) {
   fabOpen = open && !isDegraded();
   byId("rdFabMenu")?.classList.toggle("open", fabOpen);
   byId("rdFab")?.classList.toggle("open", fabOpen);
+  // v2: ＋を押した直後に背景をうすく暗転（メニューは暗転の上に出す）
+  document.querySelector(".rd-fab-layer")?.classList.toggle("elevated", fabOpen);
+  if (fabOpen) {
+    byId("rdScrim")?.classList.add("show");
+  } else if (!anySheetOpen()) {
+    byId("rdScrim")?.classList.remove("show");
+  }
 }
 
 function openSheet(id) {
@@ -546,24 +557,19 @@ function openBookingSheet(reservation) {
 
   // 店舗のロック判定：その日の active 予約（編集中は自分を除く）or planned_store(salon)
   const lockedStore = resolveLockedStore(isEdit ? reservation : null);
-  const storeLockedBox = byId("rdBkStoreLocked");
+  const storeField = byId("rdBkStoreField");
   const storePickBox = byId("rdBkStorePick");
-  const storeReq = byId("rdBkStoreReq");
+  const ctxText = byId("rdBkCtxText");
   if (lockedStore) {
+    // 店舗確定：冒頭の文脈行に「M月D日（曜）・<店舗> に追加します」で示し、お店選択は出さない
     bookingStoreChoice = lockedStore;
-    storeLockedBox.hidden = false;
-    storePickBox.hidden = true;
-    storeReq.hidden = true;
-    const css = STORE_CSS[lockedStore];
-    const chip = byId("rdBkStoreChip");
-    chip.className = `rd-store-chip ${css}`;
-    byId("rdBkStoreName").textContent = STORE_FULL[lockedStore];
-    byId("rdBkLockMsg").textContent = `この日はすでに${STORE_FULL[lockedStore]}でお店が決まっているため、お店は${STORE_FULL[lockedStore]}になります。`;
+    storeField.hidden = true;
+    ctxText.textContent = `${formatCtxDate(selectedDate)}・${STORE_FULL[lockedStore]} に${isEdit ? "" : "追加します"}`;
   } else {
+    // 予約0かつ店舗未設定の日：最初の予約で店舗を決める（田主丸/太宰府）
     bookingStoreChoice = isEdit ? (reservation.store_code || "") : "";
-    storeLockedBox.hidden = true;
-    storePickBox.hidden = false;
-    storeReq.hidden = false;
+    storeField.hidden = false;
+    ctxText.textContent = `${formatCtxDate(selectedDate)} に${isEdit ? "" : "追加します"}`;
     storePickBox.querySelectorAll("button[data-s]").forEach((b) => b.classList.toggle("on", b.dataset.s === bookingStoreChoice));
   }
 
@@ -1039,7 +1045,7 @@ function nextFreeStart() {
 
 /* ============ ユーティリティ ============ */
 function byId(id) { return document.getElementById(id); }
-function setMonthStatus(text) { const n = byId("rdMonthStatus"); if (n) n.textContent = text; }
+function setMonthStatus(text) { const n = byId("rdMonthStatus"); if (n) { n.textContent = text || ""; n.hidden = !text; } }
 function putError(id, msg) { const n = byId(id); if (!n) return; n.textContent = msg; n.hidden = !msg; }
 
 function fillTimeSelect(sel, from, to) {
@@ -1082,6 +1088,7 @@ function todayKey() {
   return `${v.year}-${v.month}-${v.day}`;
 }
 function parseDateKey(value) { const [y, m, d] = value.split("-").map(Number); return new Date(y, m - 1, d); }
+function formatCtxDate(key) { const d = parseDateKey(key); return `${d.getMonth() + 1}月${d.getDate()}日（${WDAYS[d.getDay()]}）`; }
 function dateKey(date) { return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-"); }
 function startOfMonth(date) { return new Date(date.getFullYear(), date.getMonth(), 1); }
 function endOfMonth(date) { return new Date(date.getFullYear(), date.getMonth() + 1, 0); }
@@ -1099,6 +1106,7 @@ function icon(name, size = 20, sw = 2) {
     noEntry: '<circle cx="12" cy="12" r="9"></circle><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line>',
     x: '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>',
     clock: '<circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline>',
+    calendar: '<rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>',
     lock: '<rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>',
     check: '<polyline points="20 6 9 17 4 12"></polyline>',
     trash: '<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>',

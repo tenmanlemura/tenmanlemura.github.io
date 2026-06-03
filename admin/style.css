@@ -1719,9 +1719,8 @@ button {
 .rd-day .meta { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: var(--fg-2); font-variant-numeric: tabular-nums; }
 .rd-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
 .rd-dot.tama { background: var(--teal-dark); } .rd-dot.daza { background: var(--teal-light); } .rd-dot.event { background: #E0A53C; }
-.rd-day.sel { border-color: var(--teal); background: var(--card); box-shadow: 0 0 0 1px var(--teal), var(--sh-soft); }
+.rd-day.sel { background: var(--tint); }
 .rd-day.sel .dnum { color: var(--teal-dark); font-weight: 700; }
-.rd-day.today .dnum { text-decoration: underline; text-underline-offset: 2px; }
 
 .rd-divider { height: 8px; background: var(--tint); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 
@@ -1763,6 +1762,7 @@ button {
 
 /* ---- FAB ---- */
 .rd-fab-layer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; display: flex; justify-content: center; pointer-events: none; }
+.rd-fab-layer.elevated { z-index: 55; } /* スクリム(z50)の上に FAB とメニューを出す */
 .rd-fab-inner { width: 100%; max-width: 440px; position: relative; height: 0; }
 .rd-fab { position: absolute; right: 20px; bottom: 80px; width: 60px; height: 60px; border-radius: 50%; background: var(--teal); border: none; cursor: pointer; box-shadow: var(--sh-fab); pointer-events: auto; display: flex; align-items: center; justify-content: center; color: #fff; }
 .rd-fab:active { transform: scale(.95); background: var(--teal-dark); }
@@ -1789,6 +1789,8 @@ button {
 .rd-sheet-foot { padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 9px; background: var(--card); }
 
 /* ---- フォーム（シート内） ---- */
+.rd-ctx { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--teal-dark); background: var(--tint); border-radius: 10px; padding: 11px 13px; margin-bottom: 18px; }
+.rd-ctx svg { flex: none; color: var(--teal-dark); }
 .rd-field { margin-bottom: 16px; }
 .rd-field > label { display: block; font-size: 13px; font-weight: 700; color: var(--fg-2); margin-bottom: 7px; }
 .rd-req { color: var(--danger); font-size: 11px; font-weight: 700; margin-left: 5px; }
