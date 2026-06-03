@@ -1,7 +1,6 @@
 import { db } from "./app.js";
 import {
   collection,
-  getDocs,
   query,
   where,
   onSnapshot,
@@ -9,62 +8,63 @@ import {
   limit,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { cancelReservation, mountReservationForm } from "./reservation-modal.js";
+import { cancelReservation } from "./reservation-modal.js";
 import { commitWrite } from "./write-helpers.js";
 import { isDegraded } from "./degraded.js";
 
-const WDAYS = ["日", "月", "火", "水", "木", "金", "土"];
-const STORE_LABELS = {
-  tanushimaru: "田主丸店",
-  dazaifu: "太宰府店",
-  event: "イベント出店",
-};
-const STORE_BADGE_LABELS = {
-  tanushimaru: "田主丸",
-  dazaifu: "太宰府",
-  event: "EVENT",
-};
-const PLANNED_STORES = [
-  ["tanushimaru", "田主丸店"],
-  ["dazaifu", "太宰府店"],
-  ["event", "イベント"],
-];
-const OPEN_MINUTES = 9 * 60;
-const CLOSE_MINUTES = 21 * 60;
-const YEAR_PICKER_RADIUS = 5;
-const EMPTY_ERROR_MESSAGE = "";
+/* =========================================================================
+   home-tab.js — redesign-2026-06（task ベース）
+   カレンダー（店舗色の点 + 件数のみ）+ 選択日ハブ + FAB + ボトムシート群。
+   Firestore 配線（subscribe / commitWrite）は従来踏襲。書込は commitWrite 経由のみ。
+   ========================================================================= */
 
-let initialized = false;
+const WDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+const STORE_FULL = { tanushimaru: "田主丸店", dazaifu: "太宰府店", event: "イベント出店" };
+const STORE_SHORT = { tanushimaru: "田主丸", dazaifu: "太宰府", event: "イベント" };
+const STORE_CSS = { tanushimaru: "tama", dazaifu: "daza", event: "event" };
+const COURSE_MIN = { "40": 40, "60": 60 };
+const OPEN_MIN = 9 * 60;
+const CLOSE_MIN = 21 * 60;
+const TIME_STEP = 10;
+
 let built = false;
+let initialized = false;
 let currentMonth = startOfMonth(parseDateKey(todayKey()));
 let selectedDate = todayKey();
 let monthReservations = [];
 let schedulesByDate = new Map();
 let selectedBlocks = [];
 let selectedBlocksError = "";
-let formDirty = false;
 let unsubscribeReservations = null;
 let unsubscribeSchedules = null;
 let unsubscribeSelectedBlocks = null;
 
+// シート編集状態
+let editingReservation = null; // 予約編集中の doc（null=新規）
+let editingBlock = null;        // 予約不可編集中の doc（null=新規）
+let bookingCourse = "60";
+let bookingStoreChoice = "";    // 予約0の日に選んだ店（tama 用 code）
+let pendingDelete = null;       // 確認ダイアログ対象 {kind, item}
+let lastCancelled = null;       // 直前キャンセル {id, snapshot} 復活用
+let toastTimer = null;
+let fabOpen = false;
+
+/* ============ 初期化 ============ */
 export function initHomeTab() {
   const root = document.getElementById("tab-home");
   if (!root) return;
 
   if (!built) {
     buildHomeDom(root);
+    buildOverlays();
     built = true;
   }
-
   if (initialized) {
     renderHome();
     return;
   }
-
   initialized = true;
-  setupMonthButtons();
-  setupMonthPicker();
-  setupWriteButtons();
+  wireStaticHandlers();
   subscribeMonthData();
   subscribeSelectedBlocks(selectedDate);
   renderHome();
@@ -80,403 +80,227 @@ export function teardownHomeTab() {
   initialized = false;
 }
 
+/* ============ DOM 構築 ============ */
 function buildHomeDom(root) {
   root.innerHTML = `
-    <div class="panel-heading">
-      <p class="section-label">Home</p>
-      <h2>ホーム</h2>
-    </div>
-    <div class="home-stack">
-      <section class="month-shell" aria-labelledby="homeMonthTitle">
-        <div class="month-head">
-          <button type="button" class="btn btn-secondary btn-compact" id="homePrevMonth">前月</button>
-          <div class="month-title-wrap">
-            <button type="button" class="month-title" id="homeMonthTitle" aria-haspopup="dialog" aria-expanded="false" aria-controls="homeMonthPicker">--</button>
-            <div class="month-picker" id="homeMonthPicker" role="dialog" aria-label="表示月を選択" hidden>
-              <label class="month-picker-field">
-                <span>年</span>
-                <select id="homeMonthYear"></select>
-              </label>
-              <label class="month-picker-field">
-                <span>月</span>
-                <select id="homeMonthSelect"></select>
-              </label>
-            </div>
-          </div>
-          <button type="button" class="btn btn-secondary btn-compact" id="homeNextMonth">次月</button>
-          <button type="button" class="btn btn-secondary btn-compact" id="homeCurrentMonth">今月</button>
+    <section class="rd-cal" aria-label="月次カレンダー">
+      <div class="rd-cal-top">
+        <div class="rd-cal-title" id="rdCalTitle"><b>--</b>月 <span>----</span></div>
+        <div class="rd-cal-nav">
+          <button type="button" class="rd-navbtn" id="rdPrevMonth" aria-label="前の月"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+          <button type="button" class="rd-todaybtn" id="rdToday">今月</button>
+          <button type="button" class="rd-navbtn" id="rdNextMonth" aria-label="次の月"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         </div>
-        <div class="month-status" id="homeMonthStatus" role="status">読み込み中...</div>
-        <div class="month-grid" id="homeMonthCalendar" aria-label="月次カレンダー"></div>
-      </section>
-
-      <section class="detail-shell" aria-labelledby="homeSelectedTitle">
-        <div class="section-subhead section-subhead-action">
-          <div>
-            <p class="section-label">Selected day</p>
-            <h3 id="homeSelectedTitle">選択日詳細</h3>
-          </div>
-        </div>
-        <div class="x-summary" id="homeDaySummary">
-          <span class="x-pill is-empty" data-summary-store>営業予定なし</span>
-          <span class="x-counts" data-summary-counts hidden></span>
-          <button type="button" class="btn btn-secondary btn-compact x-summary-edit" id="homeOpenScheduleModal" data-write="true">営業予定を編集</button>
-          <p class="x-note" data-summary-note hidden></p>
-        </div>
-        <div class="row-list row-list-inline" id="homeSelectedInlineList" data-summary-inline-list hidden></div>
-      </section>
-    </div>
-  `;
-  buildScheduleModalDom();
-}
-
-function buildScheduleModalDom() {
-  if (document.getElementById("homeScheduleModalBackdrop")) return;
-
-  const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop schedule-modal-backdrop";
-  backdrop.id = "homeScheduleModalBackdrop";
-  backdrop.setAttribute("aria-hidden", "true");
-  backdrop.innerHTML = `
-    <div class="modal schedule-modal" role="dialog" aria-modal="true" aria-labelledby="homeScheduleModalTitle">
-      <header class="modal-header">
-        <div>
-          <h3 id="homeScheduleModalTitle">営業予定を編集</h3>
-          <p class="modal-date" id="homeScheduleDate">--</p>
-        </div>
-        <button type="button" class="modal-close" data-schedule-modal-close aria-label="閉じる">×</button>
-      </header>
-      <div class="modal-body">
-        <form class="modal-form" id="homeScheduleForm" noValidate>
-          <div class="form-grid">
-            <fieldset class="form-fieldset form-field-wide">
-              <legend>営業先</legend>
-              <div class="radio-row">${radioOptions("planned_store", PLANNED_STORES, "")}</div>
-            </fieldset>
-            <div class="event-fields form-field-wide" data-event-fields hidden>
-              <label class="form-field">
-                <span>イベント名</span>
-                <input type="text" name="event_name">
-              </label>
-              <label class="form-field">
-                <span>会場</span>
-                <input type="text" name="event_venue">
-              </label>
-            </div>
-            <label class="form-field form-field-wide">
-              <span>メモ</span>
-              <textarea name="note" rows="3"></textarea>
-            </label>
-          </div>
-          <p class="form-error" data-schedule-error hidden></p>
-        </form>
-        <section class="modal-sub" aria-labelledby="homeReservationSubhead">
-          <div class="modal-sub-head">
-            <h4 id="homeReservationSubhead">予約</h4>
-            <button type="button" class="btn btn-secondary btn-compact" id="homeAddReservation" data-write="true">予約を追加</button>
-          </div>
-          <div class="row-list" id="homeSelectedList"></div>
-        </section>
-        <section class="modal-sub" aria-labelledby="homeBlockSubhead">
-          <div class="modal-sub-head">
-            <h4 id="homeBlockSubhead">予約不可</h4>
-            <button type="button" class="btn btn-secondary btn-compact" id="homeAddBlock" data-write="true">予約不可を追加</button>
-          </div>
-          <div class="row-list" id="homeSelectedBlockList"></div>
-        </section>
-        <section class="schedule-sub-view" id="homeScheduleSubView" hidden aria-labelledby="homeScheduleSubTitle">
-          <div class="schedule-sub-head">
-            <h4 id="homeScheduleSubTitle" data-sub-title>予約を編集</h4>
-          </div>
-          <div class="schedule-sub-body" data-sub-body></div>
-        </section>
       </div>
-      <footer class="modal-footer" id="homeScheduleMainFooter">
-        <button type="button" class="btn btn-danger btn-compact" id="homeDeleteSchedule" data-write="true">営業予定を削除</button>
-        <div class="modal-footer-primary">
-          <button type="button" class="btn btn-secondary btn-compact" data-schedule-modal-close>キャンセル</button>
-          <button type="submit" class="btn btn-compact" form="homeScheduleForm" data-write="true">保存</button>
+      <div class="rd-dow"><span class="sun">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="sat">土</span></div>
+      <div class="rd-grid" id="rdGrid"></div>
+      <p class="rd-count-line" id="rdMonthStatus" style="text-align:right;margin:8px 2px 0;">読み込み中...</p>
+    </section>
+
+    <div class="rd-divider"></div>
+
+    <section class="rd-hub" aria-label="選択日の予定">
+      <div class="rd-hub-head">
+        <div class="rd-hub-date" id="rdHubDate">--</div>
+        <div>
+          <span class="rd-store-label">この日のお店</span>
+          <button type="button" class="rd-store-select none" id="rdStoreSelect" data-write="true">
+            <span class="sdot"></span><span id="rdStoreSelName">未設定</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
         </div>
-      </footer>
-      <footer class="modal-footer schedule-sub-footer" id="homeScheduleSubFooter" hidden>
-        <div class="modal-footer-primary">
-          <button type="button" class="btn btn-secondary btn-compact" data-sub-cancel>← 戻る</button>
-          <button type="button" class="btn btn-compact" data-sub-submit data-write="true">保存</button>
+      </div>
+      <div class="rd-day-memo" id="rdDayMemo" hidden></div>
+      <div class="rd-count-line" id="rdCountLine"></div>
+      <div class="rd-schedule" id="rdSchedule"></div>
+    </section>
+  `;
+}
+
+function buildOverlays() {
+  if (document.getElementById("rdOverlayRoot")) return;
+  const wrap = document.createElement("div");
+  wrap.id = "rdOverlayRoot";
+  wrap.innerHTML = `
+    <div class="rd-fab-layer">
+      <div class="rd-fab-inner">
+        <div class="rd-fab-menu" id="rdFabMenu">
+          <button type="button" class="rd-fab-action" id="rdFabAddBooking" data-write="true"><span class="ai add">${icon("plus", 17, 2.4)}</span>予約を追加</button>
+          <button type="button" class="rd-fab-action" id="rdFabAddBlock" data-write="true"><span class="ai block">${icon("noEntry", 17, 2.4)}</span>予約不可にする</button>
         </div>
-      </footer>
+        <button type="button" class="rd-fab" id="rdFab" data-write="true" aria-label="追加">${icon("plus", 28, 2.4)}</button>
+      </div>
+    </div>
+
+    <div class="rd-scrim" id="rdScrim"></div>
+
+    <!-- 予約シート -->
+    <div class="rd-sheet" id="rdSheetBooking" role="dialog" aria-modal="true">
+      <div class="rd-sheet-head"><span class="rd-sheet-title" id="rdBkTitle">予約を追加</span><button type="button" class="rd-sheet-close" data-rd-close>${icon("x", 18, 2)}</button></div>
+      <div class="rd-sheet-body">
+        <div class="rd-field"><label>お名前<span class="rd-req">必須</span></label><input class="rd-input" id="rdBkName" placeholder="例：小林 由美" autocomplete="off"></div>
+        <div class="rd-field"><label>開始時刻<span class="rd-req">必須</span></label><div class="rd-sel-wrap"><select class="rd-select" id="rdBkStart"></select>${icon("chevDown", 18, 2)}</div></div>
+        <div class="rd-field"><label>コース<span class="rd-req">必須</span></label><div class="rd-toggle" id="rdBkCourse"><button type="button" data-c="40">40分</button><button type="button" data-c="60">60分</button></div></div>
+        <div class="rd-field"><div class="rd-end-note">${icon("clock", 16, 1.8)}終了時刻 <b id="rdBkEnd">--:--</b>（自動）</div></div>
+        <div class="rd-field" id="rdBkStoreField"><label>お店<span class="rd-req" id="rdBkStoreReq" hidden>必須</span></label>
+          <div id="rdBkStoreLocked" hidden><span class="rd-store-chip" id="rdBkStoreChip"><span class="sdot"></span><span id="rdBkStoreName">--</span></span><div class="rd-lock-note">${icon("lock", 14, 1.8)}<span id="rdBkLockMsg"></span></div></div>
+          <div class="rd-toggle" id="rdBkStorePick" hidden><button type="button" data-s="tanushimaru">田主丸店</button><button type="button" data-s="dazaifu">太宰府店</button></div>
+        </div>
+        <div class="rd-field"><label>電話番号<span class="rd-opt">任意</span></label><input class="rd-input" id="rdBkTel" inputmode="tel" placeholder="例：090-1234-5678" autocomplete="off"></div>
+        <div class="rd-field"><label>メモ<span class="rd-opt">任意</span></label><textarea class="rd-input" id="rdBkMemo" placeholder="お客さまについてのメモなど"></textarea></div>
+        <p class="rd-form-error" id="rdBkError" hidden></p>
+      </div>
+      <div class="rd-sheet-foot">
+        <button type="button" class="rd-btn rd-btn-primary" id="rdBkSave" data-write="true">この内容で予約する</button>
+        <button type="button" class="rd-btn-danger-text" id="rdBkDelete" data-write="true" hidden>この予約をキャンセルする</button>
+      </div>
+    </div>
+
+    <!-- 予約不可シート -->
+    <div class="rd-sheet" id="rdSheetBlock" role="dialog" aria-modal="true">
+      <div class="rd-sheet-head"><span class="rd-sheet-title" id="rdBlkTitle">予約を受けない時間</span><button type="button" class="rd-sheet-close" data-rd-close>${icon("x", 18, 2)}</button></div>
+      <div class="rd-sheet-body">
+        <p style="font-size:13px;color:var(--fg-2);margin:0 0 16px;">この時間は受付を停止します。お客さまは予約できなくなります。</p>
+        <div class="rd-field"><label>時間帯<span class="rd-req">必須</span></label>
+          <div class="rd-row2">
+            <div class="rd-sel-wrap"><select class="rd-select" id="rdBlkStart"></select>${icon("chevDown", 18, 2)}</div>
+            <div class="rd-arrow-mid">〜</div>
+            <div class="rd-sel-wrap"><select class="rd-select" id="rdBlkEnd"></select>${icon("chevDown", 18, 2)}</div>
+          </div>
+        </div>
+        <p class="rd-form-error" id="rdBlkError" hidden></p>
+      </div>
+      <div class="rd-sheet-foot">
+        <button type="button" class="rd-btn rd-btn-primary" id="rdBlkSave" data-write="true">この時間を受付停止にする</button>
+        <button type="button" class="rd-btn-danger-text" id="rdBlkDelete" data-write="true" hidden>この受付停止を解除する</button>
+      </div>
+    </div>
+
+    <!-- お店設定シート -->
+    <div class="rd-sheet" id="rdSheetStore" role="dialog" aria-modal="true">
+      <div class="rd-sheet-head"><span class="rd-sheet-title">この日のお店</span><button type="button" class="rd-sheet-close" data-rd-close>${icon("x", 18, 2)}</button></div>
+      <div class="rd-sheet-body">
+        <div class="rd-store-opts" id="rdStoreOpts">
+          <button type="button" class="rd-store-opt" data-s="tanushimaru"><span class="od" style="background:var(--teal-dark)"></span><span><span class="ot">田主丸店</span></span><span class="ck">${icon("check", 20, 2.4)}</span></button>
+          <button type="button" class="rd-store-opt" data-s="dazaifu"><span class="od" style="background:var(--teal-light)"></span><span><span class="ot">太宰府店</span></span><span class="ck">${icon("check", 20, 2.4)}</span></button>
+          <button type="button" class="rd-store-opt" data-s="event"><span class="od" style="background:#E0A53C"></span><span><span class="ot">イベント出店</span><span class="os">外部の会場などで鑑定する日</span></span><span class="ck">${icon("check", 20, 2.4)}</span></button>
+        </div>
+        <div class="rd-lock-note" id="rdStoreLockNote" hidden>${icon("lock", 14, 1.8)}<span>この日はすでに予約が入っているため、お店は変更できません。すべての予約を消すと変更できます。</span></div>
+        <div id="rdEventFields" hidden style="margin-top:18px;">
+          <div class="rd-field"><label>イベント名<span class="rd-req">必須</span></label><input class="rd-input" id="rdEvName" placeholder="例：夏の癒やしフェア" autocomplete="off"></div>
+          <div class="rd-field"><label>会場<span class="rd-opt">任意</span></label><input class="rd-input" id="rdEvVenue" placeholder="例：天神イベントホール" autocomplete="off"></div>
+        </div>
+        <div class="rd-field" style="margin-top:18px;"><label>この日のメモ<span class="rd-opt">任意</span></label><textarea class="rd-input" id="rdStMemo" placeholder="例：午後は混みやすい"></textarea></div>
+        <p class="rd-form-error" id="rdStError" hidden></p>
+      </div>
+      <div class="rd-sheet-foot">
+        <button type="button" class="rd-btn rd-btn-primary" id="rdStSave" data-write="true">保存する</button>
+        <button type="button" class="rd-btn-danger-text" id="rdStDelete" data-write="true" hidden>この日のお店設定を解除する</button>
+      </div>
+    </div>
+
+    <!-- トースト -->
+    <div class="rd-toast-layer"><div class="rd-toast" id="rdToast"><span id="rdToastMsg"></span><button type="button" class="undo" id="rdToastUndo" hidden>元に戻す</button></div></div>
+
+    <!-- 確認ダイアログ -->
+    <div class="rd-scrim lv2" id="rdScrim2"></div>
+    <div class="rd-dialog" id="rdConfirm" role="alertdialog">
+      <div class="rd-dlg-icon">${icon("trash", 24, 1.8)}</div>
+      <h3 id="rdCfTitle">この予約をキャンセルしますか？</h3>
+      <p class="rd-dlg-sum" id="rdCfSum"></p>
+      <p class="rd-dlg-note">消したあとでも、すぐ下の「元に戻す」から戻せます。</p>
+      <div class="rd-dlg-acts">
+        <button type="button" class="rd-btn rd-btn-ghost" id="rdCfCancel">やめる</button>
+        <button type="button" class="rd-btn rd-btn-danger" id="rdCfOk" data-write="true">キャンセルする</button>
+      </div>
     </div>
   `;
-  document.body.appendChild(backdrop);
+  document.body.appendChild(wrap);
 }
 
-function setupMonthButtons() {
-  document.getElementById("homePrevMonth")?.addEventListener("click", () => {
-    currentMonth = addMonths(currentMonth, -1);
-    selectedDate = dateKey(currentMonth);
-    subscribeMonthData();
-    subscribeSelectedBlocks(selectedDate);
-    renderHome();
-  });
-
-  document.getElementById("homeNextMonth")?.addEventListener("click", () => {
-    currentMonth = addMonths(currentMonth, 1);
-    selectedDate = dateKey(currentMonth);
-    subscribeMonthData();
-    subscribeSelectedBlocks(selectedDate);
-    renderHome();
-  });
-
-  document.getElementById("homeCurrentMonth")?.addEventListener("click", () => {
+/* ============ 静的ハンドラ ============ */
+function wireStaticHandlers() {
+  byId("rdPrevMonth")?.addEventListener("click", () => moveMonth(-1));
+  byId("rdNextMonth")?.addEventListener("click", () => moveMonth(1));
+  byId("rdToday")?.addEventListener("click", () => {
     currentMonth = startOfMonth(parseDateKey(todayKey()));
-    selectedDate = todayKey();
-    subscribeMonthData();
-    subscribeSelectedBlocks(selectedDate);
-    renderHome();
-  });
-}
-
-function setupMonthPicker() {
-  const title = document.getElementById("homeMonthTitle");
-  const picker = document.getElementById("homeMonthPicker");
-  const yearSelect = document.getElementById("homeMonthYear");
-  const monthSelect = document.getElementById("homeMonthSelect");
-  if (!title || !picker || !yearSelect || !monthSelect) return;
-
-  title.addEventListener("click", () => {
-    if (picker.hidden) {
-      openMonthPicker();
-      return;
-    }
-    closeMonthPicker();
+    selectDate(todayKey(), true);
   });
 
-  yearSelect.addEventListener("change", applyMonthPickerValue);
-  monthSelect.addEventListener("change", applyMonthPickerValue);
+  byId("rdFab")?.addEventListener("click", () => setFab(!fabOpen));
+  byId("rdFabAddBooking")?.addEventListener("click", () => { setFab(false); openBookingSheet(null); });
+  byId("rdFabAddBlock")?.addEventListener("click", () => { setFab(false); openBlockSheet(null); });
+  byId("rdStoreSelect")?.addEventListener("click", () => openStoreSheet());
 
-  document.addEventListener("click", (event) => {
-    if (picker.hidden) return;
-    if (event.target === title || picker.contains(event.target)) return;
-    closeMonthPicker();
+  byId("rdScrim")?.addEventListener("click", closeSheets);
+  document.querySelectorAll("[data-rd-close]").forEach((b) => b.addEventListener("click", closeSheets));
+
+  // 予約シート
+  byId("rdBkStart")?.addEventListener("change", updateBookingEnd);
+  byId("rdBkCourse")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-c]");
+    if (btn) setBookingCourse(btn.dataset.c);
+  });
+  byId("rdBkStorePick")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-s]");
+    if (btn) setBookingStoreChoice(btn.dataset.s);
+  });
+  byId("rdBkSave")?.addEventListener("click", saveBooking);
+  byId("rdBkDelete")?.addEventListener("click", () => requestDelete("booking", editingReservation));
+
+  // 予約不可シート
+  byId("rdBlkSave")?.addEventListener("click", saveBlock);
+  byId("rdBlkDelete")?.addEventListener("click", () => requestDelete("block", editingBlock));
+
+  // お店設定シート
+  byId("rdStoreOpts")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-s]");
+    if (btn && !btn.disabled) pickStore(btn.dataset.s);
+  });
+  byId("rdStSave")?.addEventListener("click", saveStore);
+  byId("rdStDelete")?.addEventListener("click", deleteStore);
+
+  // 確認ダイアログ
+  byId("rdScrim2")?.addEventListener("click", closeConfirm);
+  byId("rdCfCancel")?.addEventListener("click", closeConfirm);
+  byId("rdCfOk")?.addEventListener("click", confirmDelete);
+
+  // トースト復活
+  byId("rdToastUndo")?.addEventListener("click", restoreLastCancelled);
+
+  // 背景タップで FAB を閉じる
+  document.addEventListener("click", (e) => {
+    if (fabOpen && !e.target.closest(".rd-fab-layer")) setFab(false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (isConfirmOpen()) { closeConfirm(); return; }
+    if (anySheetOpen()) { closeSheets(); return; }
+    if (fabOpen) setFab(false);
   });
 
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !picker.hidden) {
-      closeMonthPicker();
-      title.focus();
-    }
-  });
+  // 時刻 select を 10 分刻みで初期化
+  fillTimeSelect(byId("rdBkStart"), OPEN_MIN, CLOSE_MIN - TIME_STEP);
+  fillTimeSelect(byId("rdBlkStart"), OPEN_MIN, CLOSE_MIN - TIME_STEP);
+  fillTimeSelect(byId("rdBlkEnd"), OPEN_MIN + TIME_STEP, CLOSE_MIN);
 }
 
-function openMonthPicker() {
-  const title = document.getElementById("homeMonthTitle");
-  const picker = document.getElementById("homeMonthPicker");
-  const yearSelect = document.getElementById("homeMonthYear");
-  if (!title || !picker) return;
-
-  syncMonthPicker();
-  picker.hidden = false;
-  title.setAttribute("aria-expanded", "true");
-  yearSelect?.focus();
+function moveMonth(delta) {
+  currentMonth = addMonths(currentMonth, delta);
+  selectDate(dateKey(currentMonth), true);
 }
 
-function closeMonthPicker() {
-  const title = document.getElementById("homeMonthTitle");
-  const picker = document.getElementById("homeMonthPicker");
-  if (!title || !picker) return;
-
-  picker.hidden = true;
-  title.setAttribute("aria-expanded", "false");
-}
-
-function applyMonthPickerValue() {
-  const yearSelect = document.getElementById("homeMonthYear");
-  const monthSelect = document.getElementById("homeMonthSelect");
-  const year = Number(yearSelect?.value);
-  const month = Number(monthSelect?.value);
-  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) return;
-
-  currentMonth = new Date(year, month - 1, 1);
-  selectedDate = dateKey(currentMonth);
-  subscribeMonthData();
+function selectDate(date, resubscribeMonth) {
+  selectedDate = date;
+  if (resubscribeMonth) subscribeMonthData();
   subscribeSelectedBlocks(selectedDate);
   renderHome();
 }
 
-function setupWriteButtons() {
-  document.getElementById("homeOpenScheduleModal")?.addEventListener("click", () => {
-    openScheduleModal();
-  });
-
-  document.getElementById("homeAddReservation")?.addEventListener("click", () => {
-    enterScheduleSubView({
-      title: "予約を追加",
-      submitLabel: "追加",
-      mount: (container) => mountReservationForm({ container, existing: null, presetDate: selectedDate }),
-    });
-  });
-
-  document.getElementById("homeAddBlock")?.addEventListener("click", () => {
-    enterScheduleSubView({
-      title: "予約不可を追加",
-      submitLabel: "追加",
-      mount: (container) => mountBlockForm({ container, existing: null }),
-    });
-  });
-
-  document.getElementById("homeScheduleForm")?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    await submitSelectedSchedule(event.currentTarget);
-  });
-
-  document.getElementById("homeDeleteSchedule")?.addEventListener("click", () => {
-    deleteSelectedSchedule();
-  });
-
-  document.getElementById("homeScheduleForm")?.addEventListener("change", (event) => {
-    if (event.target?.name === "planned_store") syncScheduleEventFields();
-  });
-
-  document.getElementById("homeScheduleForm")?.addEventListener("input", () => {
-    formDirty = true;
-  });
-
-  document.querySelectorAll("[data-schedule-modal-close]").forEach((button) => {
-    button.addEventListener("click", closeScheduleModal);
-  });
-
-  document.getElementById("homeScheduleModalBackdrop")?.addEventListener("click", (event) => {
-    if (event.target === event.currentTarget) closeScheduleModal();
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
-    if (!isScheduleModalOpen()) return;
-    if (isScheduleSubViewOpen()) {
-      exitScheduleSubView();
-      return;
-    }
-    if (isChildModalOpen()) return;
-    closeScheduleModal();
-  });
-}
-
-function openScheduleModal() {
-  const backdrop = document.getElementById("homeScheduleModalBackdrop");
-  if (!backdrop) return;
-
-  formDirty = false;
-  renderSelectedDetails();
-  backdrop.classList.add("is-open");
-  backdrop.setAttribute("aria-hidden", "false");
-  backdrop.querySelector("input, select, textarea, button")?.focus();
-}
-
-function closeScheduleModal() {
-  const backdrop = document.getElementById("homeScheduleModalBackdrop");
-  if (!backdrop) return;
-
-  exitScheduleSubView({ silent: true });
-  formDirty = false;
-  backdrop.classList.remove("is-open");
-  backdrop.setAttribute("aria-hidden", "true");
-  document.getElementById("homeOpenScheduleModal")?.focus();
-}
-
-let activeSubViewInstance = null;
-
-function enterScheduleSubView({ title, submitLabel, mount }) {
-  const backdrop = document.getElementById("homeScheduleModalBackdrop");
-  if (!backdrop) return;
-  if (activeSubViewInstance) exitScheduleSubView({ silent: true });
-
-  const body = backdrop.querySelector(".modal-body");
-  const mainFooter = document.getElementById("homeScheduleMainFooter");
-  const subView = document.getElementById("homeScheduleSubView");
-  const subFooter = document.getElementById("homeScheduleSubFooter");
-  if (!body || !mainFooter || !subView || !subFooter) return;
-
-  [...body.children].forEach((child) => {
-    if (child === subView) return;
-    if (!child.hidden) {
-      child.dataset.hiddenBySub = "true";
-      child.hidden = true;
-    }
-  });
-  mainFooter.hidden = true;
-  subView.hidden = false;
-  subFooter.hidden = false;
-  subView.querySelector("[data-sub-title]").textContent = title;
-  const submitBtn = subFooter.querySelector("[data-sub-submit]");
-  const cancelBtn = subFooter.querySelector("[data-sub-cancel]");
-  submitBtn.textContent = submitLabel;
-  submitBtn.disabled = isDegraded();
-
-  const subBody = subView.querySelector("[data-sub-body]");
-  subBody.innerHTML = "";
-  const instance = mount(subBody);
-  activeSubViewInstance = { instance, subView, subFooter, body, mainFooter, submitBtn, cancelBtn };
-
-  const onSubmit = async () => {
-    if (submitBtn.disabled) return;
-    submitBtn.disabled = true;
-    try {
-      const result = await instance.submit();
-      if (result && result.ok) {
-        exitScheduleSubView();
-      } else {
-        submitBtn.disabled = isDegraded();
-      }
-    } catch (err) {
-      console.error("sub-view submit failed", err);
-      submitBtn.disabled = isDegraded();
-    }
-  };
-  const onCancel = () => exitScheduleSubView();
-
-  submitBtn.onclick = onSubmit;
-  cancelBtn.onclick = onCancel;
-  activeSubViewInstance.onSubmit = onSubmit;
-  activeSubViewInstance.onCancel = onCancel;
-
-  subBody.querySelector("input, select, textarea, button")?.focus();
-}
-
-function exitScheduleSubView({ silent = false } = {}) {
-  if (!activeSubViewInstance) return;
-  const { instance, subView, subFooter, body, mainFooter, submitBtn, cancelBtn } = activeSubViewInstance;
-
-  submitBtn.onclick = null;
-  cancelBtn.onclick = null;
-  if (instance.dispose) instance.dispose();
-  subView.hidden = true;
-  subFooter.hidden = true;
-  mainFooter.hidden = false;
-  [...body.children].forEach((child) => {
-    if (child.dataset.hiddenBySub === "true") {
-      child.hidden = false;
-      delete child.dataset.hiddenBySub;
-    }
-  });
-  activeSubViewInstance = null;
-  if (!silent) renderSelectedDetails();
-}
-
-function isScheduleSubViewOpen() {
-  return Boolean(activeSubViewInstance);
-}
-
-function isScheduleModalOpen() {
-  return Boolean(document.getElementById("homeScheduleModalBackdrop")?.classList.contains("is-open"));
-}
-
-function isChildModalOpen() {
-  return Boolean(document.querySelector("#modalRoot .modal-overlay"));
-}
-
+/* ============ Firestore 購読（従来踏襲） ============ */
 function subscribeMonthData() {
   unsubscribeReservations?.();
   unsubscribeSchedules?.();
-
   const range = monthQueryRange(currentMonth);
   monthReservations = [];
   schedulesByDate = new Map();
@@ -491,14 +315,14 @@ function subscribeMonthData() {
       orderBy("visit_date"),
       limit(500),
     ),
-    (snapshot) => {
-      monthReservations = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+    (snap) => {
+      monthReservations = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       renderHome();
       setMonthStatus("リアルタイム同期中");
     },
-    (error) => {
-      console.error("reservations listener failed", error);
-      setMonthStatus(userFacingErrorMessage(error, "予約の読み込みに失敗しました"));
+    (err) => {
+      console.error("reservations listener failed", err);
+      setMonthStatus(jpError(err, "予約の読み込みに失敗しました"));
     },
   );
 
@@ -510,25 +334,24 @@ function subscribeMonthData() {
       orderBy("date"),
       limit(80),
     ),
-    (snapshot) => {
+    (snap) => {
       schedulesByDate = new Map(
-        snapshot.docs
-          .map((item) => ({ id: item.id, ...item.data() }))
-          .filter((item) => item.active !== false)
-          .map((item) => [item.date, item]),
+        snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((s) => s.active !== false)
+          .map((s) => [s.date, s]),
       );
       renderHome();
     },
-    (error) => {
-      console.error("schedules listener failed", error);
-      setMonthStatus(userFacingErrorMessage(error, "営業予定の読み込みに失敗しました"));
+    (err) => {
+      console.error("schedules listener failed", err);
+      setMonthStatus(jpError(err, "営業予定の読み込みに失敗しました"));
     },
   );
 }
 
 function subscribeSelectedBlocks(date) {
   unsubscribeSelectedBlocks?.();
-
   selectedBlocks = [];
   selectedBlocksError = "";
   unsubscribeSelectedBlocks = onSnapshot(
@@ -538,39 +361,32 @@ function subscribeSelectedBlocks(date) {
       where("active", "==", true),
       limit(100),
     ),
-    (snapshot) => {
-      selectedBlocks = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+    (snap) => {
+      selectedBlocks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       selectedBlocksError = "";
-      renderSelectedDetails();
+      renderHub();
     },
-    (error) => {
-      console.error("selected blocks listener failed", error);
-      selectedBlocksError = userFacingErrorMessage(error, "予約不可の読み込みに失敗しました");
-      renderSelectedDetails();
+    (err) => {
+      console.error("blocks listener failed", err);
+      selectedBlocksError = jpError(err, "予約不可の読み込みに失敗しました");
+      renderHub();
     },
   );
 }
 
+/* ============ レンダリング ============ */
 function renderHome() {
   renderCalendar();
-  renderSelectedDetails();
+  renderHub();
 }
 
 function renderCalendar() {
-  const title = document.getElementById("homeMonthTitle");
-  const grid = document.getElementById("homeMonthCalendar");
+  const title = byId("rdCalTitle");
+  const grid = byId("rdGrid");
   if (!title || !grid) return;
 
-  title.textContent = `${currentMonth.getFullYear()} 年 ${currentMonth.getMonth() + 1} 月`;
-  syncMonthPicker();
+  title.innerHTML = `<b>${currentMonth.getMonth() + 1}</b>月 <span>${currentMonth.getFullYear()}</span>`;
   grid.innerHTML = "";
-
-  WDAYS.forEach((wday) => {
-    const node = document.createElement("div");
-    node.className = "month-wday";
-    node.textContent = wday;
-    grid.appendChild(node);
-  });
 
   const first = startOfMonth(currentMonth);
   const last = endOfMonth(currentMonth);
@@ -580,926 +396,712 @@ function renderCalendar() {
 
   for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
     const key = dateKey(day);
+    const inMonth = day.getMonth() === currentMonth.getMonth();
     const reservations = reservationsForDate(key);
     const schedule = schedulesByDate.get(key);
-    const badgeStore = resolveDayBadgeStore(schedule, reservations);
+    const badge = resolveDayStore(schedule, reservations);
+    const dow = day.getDay();
+
     const cell = document.createElement("button");
     cell.type = "button";
-    cell.className = "month-cell";
+    cell.className = "rd-day";
+    if (dow === 0) cell.classList.add("sun");
+    if (dow === 6) cell.classList.add("sat");
+    if (!inMonth) cell.classList.add("muted");
+    if (key === selectedDate) cell.classList.add("sel");
+    if (key === today) cell.classList.add("today");
     cell.dataset.date = key;
-    cell.setAttribute("aria-label", `${key} の詳細を表示`);
 
-    if (day.getMonth() !== currentMonth.getMonth()) cell.classList.add("is-out");
-    if (key === today) cell.classList.add("is-today");
-    if (key === selectedDate) cell.classList.add("is-selected");
-
-    const dayLine = document.createElement("div");
-    dayLine.className = "month-day-line";
-    const dayNum = document.createElement("span");
-    dayNum.className = "month-daynum";
-    dayNum.textContent = String(day.getDate());
-    dayLine.appendChild(dayNum);
-    if (badgeStore) dayLine.appendChild(storeBadge(badgeStore));
-    cell.appendChild(dayLine);
-
-    if (reservations.length > 0) {
-      const count = document.createElement("span");
-      count.className = "month-count";
-      count.textContent = `${reservations.length}件`;
-      cell.appendChild(count);
-    }
-
-    reservations.slice(0, 2).forEach((reservation) => {
-      const name = document.createElement("span");
-      name.className = "month-name";
-      name.textContent = reservation.customer_name || "名前未設定";
-      cell.appendChild(name);
-    });
-
-    if (reservations.length > 2) {
-      const more = document.createElement("span");
-      more.className = "month-more";
-      more.textContent = `+${reservations.length - 2}`;
-      cell.appendChild(more);
-    }
-
-    cell.addEventListener("click", () => {
-      selectedDate = key;
-      subscribeSelectedBlocks(selectedDate);
-      renderHome();
-    });
-
+    const meta = reservations.length > 0 || badge
+      ? `<span class="meta">${badge ? `<span class="rd-dot ${STORE_CSS[badge]}"></span>` : ""}${reservations.length > 0 ? reservations.length : ""}</span>`
+      : "";
+    cell.innerHTML = `<span class="dnum">${day.getDate()}</span>${meta}`;
+    cell.addEventListener("click", () => selectDate(key, false));
     grid.appendChild(cell);
   }
 }
 
-function renderSelectedDetails() {
-  const title = document.getElementById("homeSelectedTitle");
-  if (title) {
-    title.textContent = `${formatDateWithWday(selectedDate)}の予定`;
-  }
-
-  renderDaySummary();
-  renderSelectedSchedule();
-  renderSelectedReservationList();
-  renderSelectedBlockList();
-  renderSelectedInlineList();
-}
-
-function renderSelectedInlineList() {
-  const list = document.getElementById("homeSelectedInlineList");
-  if (!list) return;
-
-  list.innerHTML = "";
-  const reservations = reservationsForDate(selectedDate);
-  const items = selectedDetailItems(reservations, selectedBlocks);
-
-  if (items.length === 0) {
-    list.hidden = true;
-    return;
-  }
-
-  list.hidden = false;
-  items.forEach((item) => {
-    const row = item.type === "reservation"
-      ? reservationRow(item.value)
-      : blockRow(item.value);
-    const actions = row.querySelector(".row-actions");
-    if (actions) actions.remove();
-    list.appendChild(row);
-  });
-
-  if (selectedBlocksError) {
-    list.appendChild(emptyRow(selectedBlocksError));
-  }
-}
-
-function renderDaySummary() {
+function renderHub() {
   const reservations = reservationsForDate(selectedDate);
   const schedule = schedulesByDate.get(selectedDate);
-  const store = resolveDayBadgeStore(schedule, reservations);
-  const storeNode = document.querySelector("[data-summary-store]");
-  const countsNode = document.querySelector("[data-summary-counts]");
-  const noteNode = document.querySelector("[data-summary-note]");
+  const store = resolveDayStore(schedule, reservations);
 
-  if (storeNode) {
-    if (store) {
-      storeNode.className = `x-pill is-${store}`;
-      storeNode.textContent = storeLabel(store);
-      storeNode.hidden = false;
+  const dateNode = byId("rdHubDate");
+  if (dateNode) {
+    const d = parseDateKey(selectedDate);
+    dateNode.innerHTML = `${d.getMonth() + 1}/${d.getDate()}<small>（${WDAYS[d.getDay()]}）</small>`;
+  }
+
+  // 店舗セレクト表示
+  const sel = byId("rdStoreSelect");
+  const selName = byId("rdStoreSelName");
+  if (sel && selName) {
+    const css = store ? STORE_CSS[store] : "none";
+    sel.className = `rd-store-select ${css}`;
+    sel.dataset.write = "true";
+    if (store === "event") {
+      selName.textContent = schedule?.event_name ? `イベント：${schedule.event_name}` : "イベント出店";
+    } else if (store) {
+      selName.textContent = STORE_SHORT[store];
     } else {
-      storeNode.hidden = true;
+      selName.textContent = "未設定";
     }
-  }
-  if (countsNode) {
-    const rCount = reservations.length;
-    const bCount = selectedBlocks.length;
-    let countsText = "";
-    if (rCount > 0 && bCount > 0) {
-      countsText = `予約 ${rCount} 件 ／ 予約不可 ${bCount} 件`;
-    } else if (rCount > 0) {
-      countsText = `予約 ${rCount} 件`;
-    } else if (bCount > 0) {
-      countsText = `予約不可 ${bCount} 件`;
-    }
-    countsNode.textContent = countsText;
-    countsNode.hidden = countsText === "";
-  }
-  if (noteNode) {
-    const note = schedule?.note || "";
-    noteNode.textContent = note;
-    noteNode.hidden = !note;
-  }
-}
-
-function renderSelectedSchedule() {
-  const form = document.getElementById("homeScheduleForm");
-  if (!form) return;
-
-  const dateNode = document.getElementById("homeScheduleDate");
-  if (dateNode) dateNode.textContent = formatDateWithWday(selectedDate);
-
-  if (formDirty && isScheduleModalOpen()) {
-    return;
+    sel.disabled = isDegraded();
   }
 
-  const schedule = schedulesByDate.get(selectedDate);
-
-  const planned = PLANNED_STORES.some(([value]) => value === schedule?.planned_store)
-    ? schedule.planned_store
-    : "";
-  form.querySelectorAll('input[name="planned_store"]').forEach((input) => {
-    input.checked = planned !== "" && input.value === planned;
-  });
-  form.elements.event_name.value = schedule?.event_name || "";
-  form.elements.event_venue.value = schedule?.event_venue || "";
-  form.elements.note.value = schedule?.note || "";
-
-  const deleteButton = document.getElementById("homeDeleteSchedule");
-  if (deleteButton) deleteButton.disabled = !schedule?.id;
-  const scheduleErrorNode = form.querySelector('[data-schedule-error]');
-  setError(scheduleErrorNode, EMPTY_ERROR_MESSAGE);
-  syncScheduleEventFields();
-}
-
-function syncScheduleEventFields() {
-  const form = document.getElementById("homeScheduleForm");
-  if (!form) return;
-
-  const isEvent = String(new FormData(form).get("planned_store") || "") === "event";
-  const fields = form.querySelector("[data-event-fields]");
-  if (fields) fields.hidden = !isEvent;
-}
-
-function renderSelectedReservationList() {
-  const list = document.getElementById("homeSelectedList");
-  if (!list) return;
-
-  list.innerHTML = "";
-  const reservations = reservationsForDate(selectedDate);
-  if (reservations.length === 0) {
-    list.appendChild(emptyRow("予約なし"));
-    return;
+  // メモ
+  const memo = byId("rdDayMemo");
+  if (memo) {
+    if (schedule?.note) { memo.textContent = `メモ：${schedule.note}`; memo.hidden = false; }
+    else memo.hidden = true;
   }
 
-  reservations.forEach((reservation) => {
-    list.appendChild(reservationRow(reservation));
-  });
-}
-
-function renderSelectedBlockList() {
-  const list = document.getElementById("homeSelectedBlockList");
-  if (!list) return;
-
-  list.innerHTML = "";
-  if (selectedBlocks.length === 0 && !selectedBlocksError) {
-    list.appendChild(emptyRow("予約不可なし"));
-    return;
+  // 件数
+  const countLine = byId("rdCountLine");
+  if (countLine) {
+    let text = `ご予約 ${reservations.length}件`;
+    if (selectedBlocks.length) text += ` ・ 受付停止 ${selectedBlocks.length}件`;
+    countLine.textContent = text;
   }
 
-  selectedBlocks
-    .map((block) => ({
-      type: "block",
-      startTime: block.start_time || "",
-      endTime: block.end_time || "",
-      id: block.id || "",
-      value: block,
-    }))
-    .sort(compareSelectedDetailItem)
-    .forEach((item) => {
-      list.appendChild(blockRow(item.value));
-    });
+  // 予定リスト
+  const wrap = byId("rdSchedule");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+
+  const items = sortDayItems(reservations, selectedBlocks);
 
   if (selectedBlocksError) {
-    list.appendChild(emptyRow(selectedBlocksError));
+    wrap.innerHTML = `<div class="rd-error-state">${escapeText(selectedBlocksError)}</div>`;
+    return;
+  }
+  if (items.length === 0) {
+    wrap.innerHTML = `<div class="rd-empty-state">この日の予定はまだありません。<br>右下の＋から追加できます。</div>`;
+    return;
+  }
+
+  items.forEach((it) => {
+    if (it.kind === "booking") wrap.appendChild(bookingSlot(it.value));
+    else wrap.appendChild(blockSlot(it.value));
+  });
+}
+
+function bookingSlot(r) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "rd-slot";
+  const end = r.end_time || addMinutes(r.start_time, COURSE_MIN[String(r.course_code)] || 0);
+  const tel = r.customer_phone ? `<span class="rd-pill tel">電話あり</span>` : "";
+  const course = r.course_code ? `<span class="rd-pill course">${escapeText(String(r.course_code))}分</span>` : "";
+  btn.innerHTML = `
+    <span class="time">${escapeText(r.start_time || "--:--")}<small>〜${escapeText(end || "--:--")}</small></span>
+    <span class="body"><span class="name">${escapeText(r.customer_name || "名前未設定")}</span><span class="tags">${course}${tel}</span></span>
+    <span class="chev">${icon("chevRight", 20, 2)}</span>`;
+  btn.addEventListener("click", () => openBookingSheet(r));
+  return btn;
+}
+
+function blockSlot(b) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "rd-slot blocked";
+  btn.innerHTML = `
+    <span class="time">${escapeText(b.start_time || "--:--")}</span>
+    <span class="body"><span class="name">予約不可</span><div class="sub">${escapeText(b.start_time || "")}〜${escapeText(b.end_time || "")} ／ この時間は受付を停止</div></span>
+    <span class="chev">${icon("chevRight", 20, 2)}</span>`;
+  btn.addEventListener("click", () => openBlockSheet(b));
+  return btn;
+}
+
+/* ============ FAB / シート開閉 ============ */
+function setFab(open) {
+  fabOpen = open && !isDegraded();
+  byId("rdFabMenu")?.classList.toggle("open", fabOpen);
+  byId("rdFab")?.classList.toggle("open", fabOpen);
+}
+
+function openSheet(id) {
+  byId("rdScrim")?.classList.add("show");
+  byId(id)?.classList.add("show");
+}
+
+function closeSheets() {
+  byId("rdScrim")?.classList.remove("show");
+  ["rdSheetBooking", "rdSheetBlock", "rdSheetStore"].forEach((s) => byId(s)?.classList.remove("show"));
+  setFab(false);
+}
+
+function anySheetOpen() {
+  return ["rdSheetBooking", "rdSheetBlock", "rdSheetStore"].some((s) => byId(s)?.classList.contains("show"));
+}
+
+/* ============ 予約シート ============ */
+function openBookingSheet(reservation) {
+  editingReservation = reservation || null;
+  const isEdit = !!reservation;
+  byId("rdBkTitle").textContent = isEdit ? "予約を編集" : "予約を追加";
+  byId("rdBkSave").textContent = isEdit ? "変更を保存する" : "この内容で予約する";
+  byId("rdBkDelete").hidden = !isEdit;
+  putError("rdBkError", "");
+
+  // 店舗のロック判定：その日の active 予約（編集中は自分を除く）or planned_store(salon)
+  const lockedStore = resolveLockedStore(isEdit ? reservation : null);
+  const storeLockedBox = byId("rdBkStoreLocked");
+  const storePickBox = byId("rdBkStorePick");
+  const storeReq = byId("rdBkStoreReq");
+  if (lockedStore) {
+    bookingStoreChoice = lockedStore;
+    storeLockedBox.hidden = false;
+    storePickBox.hidden = true;
+    storeReq.hidden = true;
+    const css = STORE_CSS[lockedStore];
+    const chip = byId("rdBkStoreChip");
+    chip.className = `rd-store-chip ${css}`;
+    byId("rdBkStoreName").textContent = STORE_FULL[lockedStore];
+    byId("rdBkLockMsg").textContent = `この日はすでに${STORE_FULL[lockedStore]}でお店が決まっているため、お店は${STORE_FULL[lockedStore]}になります。`;
+  } else {
+    bookingStoreChoice = isEdit ? (reservation.store_code || "") : "";
+    storeLockedBox.hidden = true;
+    storePickBox.hidden = false;
+    storeReq.hidden = false;
+    storePickBox.querySelectorAll("button[data-s]").forEach((b) => b.classList.toggle("on", b.dataset.s === bookingStoreChoice));
+  }
+
+  if (isEdit) {
+    byId("rdBkName").value = reservation.customer_name || "";
+    byId("rdBkStart").value = reservation.start_time || minutesToStr(OPEN_MIN);
+    setBookingCourse(String(reservation.course_code || "60"));
+    byId("rdBkTel").value = reservation.customer_phone || "";
+    byId("rdBkMemo").value = reservation.note || "";
+  } else {
+    byId("rdBkName").value = "";
+    byId("rdBkStart").value = nextFreeStart();
+    setBookingCourse("60");
+    byId("rdBkTel").value = "";
+    byId("rdBkMemo").value = "";
+  }
+  byId("rdBkName").classList.remove("invalid");
+  updateBookingEnd();
+  byId("rdBkSave").disabled = isDegraded();
+  byId("rdBkDelete").disabled = isDegraded();
+  openSheet("rdSheetBooking");
+}
+
+function setBookingCourse(c) {
+  bookingCourse = COURSE_MIN[c] ? c : "60";
+  byId("rdBkCourse").querySelectorAll("button[data-c]").forEach((b) => b.classList.toggle("on", b.dataset.c === bookingCourse));
+  updateBookingEnd();
+}
+
+function setBookingStoreChoice(s) {
+  bookingStoreChoice = s;
+  byId("rdBkStorePick").querySelectorAll("button[data-s]").forEach((b) => b.classList.toggle("on", b.dataset.s === s));
+}
+
+function updateBookingEnd() {
+  const start = byId("rdBkStart").value;
+  byId("rdBkEnd").textContent = addMinutes(start, COURSE_MIN[bookingCourse]) || "--:--";
+}
+
+async function saveBooking() {
+  if (isDegraded()) return;
+  putError("rdBkError", "");
+  const name = byId("rdBkName").value.trim();
+  if (!name) {
+    byId("rdBkName").classList.add("invalid");
+    byId("rdBkName").focus();
+    putError("rdBkError", "お名前を入力してください");
+    return;
+  }
+  byId("rdBkName").classList.remove("invalid");
+
+  const start = byId("rdBkStart").value;
+  const course = bookingCourse;
+  const end = addMinutes(start, COURSE_MIN[course]);
+  const store = bookingStoreChoice;
+  const tel = byId("rdBkTel").value.trim();
+  const memo = byId("rdBkMemo").value.trim();
+
+  const editId = editingReservation?.reservation_id || editingReservation?.id || null;
+  const vmsg = validateBookingValues(
+    { start, end, store, name },
+    { reservations: reservationsForDate(selectedDate), blocks: selectedBlocks, excludeId: editId },
+  );
+  if (vmsg) { putError("rdBkError", vmsg); return; }
+
+  const save = byId("rdBkSave");
+  save.disabled = true;
+  try {
+    if (editingReservation) {
+      const id = editId;
+      const target = `reservations/${id}`;
+      await commitWrite({
+        op: "updateReservation",
+        domain: {
+          collection: "reservations", docId: id, action: "update",
+          data: {
+            visit_date: selectedDate, start_time: start, end_time: end,
+            store_code: store, course_code: course, customer_name: name,
+            customer_phone: tel, note: memo, updated_at: serverTimestamp(),
+          },
+        },
+        inverse: { op: "update", target, data: stripId(editingReservation) },
+        target, dispatchSource: "admin_reservation_update",
+      });
+      closeSheets();
+      showToast("予約を変更しました");
+    } else {
+      const id = `rsv_${randomHex(12)}`;
+      const target = `reservations/${id}`;
+      await commitWrite({
+        op: "createReservation",
+        domain: {
+          collection: "reservations", docId: id, action: "set",
+          data: {
+            reservation_id: id, created_at: serverTimestamp(), updated_at: serverTimestamp(),
+            status: "active", visit_date: selectedDate, start_time: start, end_time: end,
+            store_code: store, course_code: course, customer_name: name, customer_phone: tel,
+            customer_line_user_id: "", customer_line_display_name: "", source: "manual",
+            cancel_token_hash: "", note: memo,
+          },
+        },
+        inverse: { op: "delete", target },
+        target, dispatchSource: "admin_reservation_create",
+      });
+      closeSheets();
+      showToast("予約を追加しました");
+    }
+  } catch (err) {
+    console.error("reservation write failed", err);
+    putError("rdBkError", jpError(err, "保存に失敗しました"));
+    save.disabled = isDegraded();
   }
 }
 
-function selectedDetailItems(reservations, blocks) {
-  return [
-    ...reservations.map((reservation) => ({
-      type: "reservation",
-      startTime: reservation.start_time || "",
-      endTime: reservation.end_time || "",
-      id: reservation.reservation_id || reservation.id || "",
-      value: reservation,
-    })),
-    ...blocks.map((block) => ({
-      type: "block",
-      startTime: block.start_time || "",
-      endTime: block.end_time || "",
-      id: block.id || "",
-      value: block,
-    })),
-  ].sort(compareSelectedDetailItem);
+/* ============ 予約不可シート ============ */
+function openBlockSheet(block) {
+  editingBlock = block || null;
+  const isEdit = !!block;
+  byId("rdBlkTitle").textContent = isEdit ? "受付停止を編集" : "予約を受けない時間";
+  byId("rdBlkDelete").hidden = !isEdit;
+  putError("rdBlkError", "");
+  byId("rdBlkStart").value = isEdit ? (block.start_time || "12:00") : "12:00";
+  byId("rdBlkEnd").value = isEdit ? (block.end_time || "13:00") : "13:00";
+  byId("rdBlkSave").disabled = isDegraded();
+  byId("rdBlkDelete").disabled = isDegraded();
+  openSheet("rdSheetBlock");
 }
 
-function compareSelectedDetailItem(a, b) {
-  return detailItemSortKey(a).localeCompare(detailItemSortKey(b));
-}
+async function saveBlock() {
+  if (isDegraded()) return;
+  putError("rdBlkError", "");
+  const start = byId("rdBlkStart").value;
+  const end = byId("rdBlkEnd").value;
+  const editId = editingBlock?.id || null;
+  const vmsg = validateBlockValues(
+    { start, end },
+    { reservations: reservationsForDate(selectedDate), blocks: selectedBlocks, excludeId: editId },
+  );
+  if (vmsg) { putError("rdBlkError", vmsg); return; }
 
-function detailItemSortKey(item) {
-  const typeRank = item.type === "reservation" ? "0" : "1";
-  return `${item.startTime || "99:99"}${item.endTime || "99:99"}${typeRank}${item.id}`;
-}
-
-function reservationRow(reservation) {
-  const row = document.createElement("div");
-  row.className = "row-list-item detail-row reservation-row";
-
-  row.appendChild(timeNode(reservation.start_time || "--:--"));
-  row.appendChild(kindBadge("予約", "reservation"));
-
-  const main = document.createElement("span");
-  main.className = "row-main";
-  const name = document.createElement("strong");
-  name.textContent = reservation.customer_name || "名前未設定";
-  const meta = document.createElement("span");
-  meta.className = "row-meta";
-  meta.textContent = `${storeLabel(reservation.store_code)} / ${reservation.course_code ? `${reservation.course_code}分` : "course 未設定"}`;
-  main.appendChild(name);
-  main.appendChild(meta);
-  row.appendChild(main);
-
-  const actions = document.createElement("span");
-  actions.className = "row-actions";
-  actions.appendChild(reservationActionButton("編集", "edit", reservation));
-  actions.appendChild(reservationActionButton("×", "cancel", reservation));
-  row.appendChild(actions);
-
-  return row;
-}
-
-function blockRow(block) {
-  const row = document.createElement("div");
-  row.className = "row-list-item detail-row block-row";
-
-  row.appendChild(timeNode(`${block.start_time || "--:--"}-${block.end_time || "--:--"}`));
-  row.appendChild(kindBadge("不可", "block"));
-
-  const main = document.createElement("span");
-  main.className = "row-main";
-  const title = document.createElement("strong");
-  title.textContent = "予約不可";
-  const meta = document.createElement("span");
-  meta.className = "row-meta";
-  meta.textContent = "この時間帯は受付停止";
-  main.appendChild(title);
-  main.appendChild(meta);
-  row.appendChild(main);
-
-  const actions = document.createElement("span");
-  actions.className = "row-actions";
-  actions.appendChild(blockEditButton(block));
-  actions.appendChild(blockDeleteButton(block));
-  row.appendChild(actions);
-
-  return row;
-}
-
-function timeNode(text) {
-  const time = document.createElement("span");
-  time.className = "row-time";
-  time.textContent = text;
-  return time;
-}
-
-function kindBadge(label, type) {
-  const badge = document.createElement("span");
-  badge.className = `row-kind is-${type}`;
-  badge.textContent = label;
-  return badge;
-}
-
-function reservationActionButton(label, action, reservation) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = label === "×" ? "btn btn-icon-delete" : "btn btn-secondary btn-row";
-  button.textContent = label;
-  button.dataset.write = "true";
-  button.setAttribute("aria-label", action === "cancel" ? "予約をキャンセル" : "予約を編集");
-  button.addEventListener("click", async () => {
-    if (action === "edit") {
-      enterScheduleSubView({
-        title: "予約を編集",
-        submitLabel: "保存",
-        mount: (container) => mountReservationForm({ container, existing: reservation }),
-      });
-      return;
-    }
-
-    const id = reservation.id || reservation.reservation_id;
-    if (!id || !confirm(`${reservation.customer_name || "この予約"}をキャンセルしますか？`)) return;
-    button.disabled = true;
-    try {
-      await cancelReservation(id);
-    } catch (error) {
-      console.error("cancel reservation failed", error);
-      alert(userFacingErrorMessage(error, "キャンセルに失敗しました"));
-      button.disabled = false;
-    }
-  });
-  return button;
-}
-
-function blockDeleteButton(block) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "btn btn-icon-delete";
-  button.textContent = "×";
-  button.title = "削除";
-  button.dataset.write = "true";
-  button.addEventListener("click", async () => {
-    if (!block.id) {
-      alert("削除対象のIDが見つかりません");
-      return;
-    }
-    if (!confirm(`${block.date} ${block.start_time}-${block.end_time} を削除しますか？`)) return;
-
-    button.disabled = true;
-    try {
-      const target = `blocks/${block.id}`;
-      await commitWrite({
-        op: "deleteBlock",
-        domain: {
-          collection: "blocks",
-          docId: block.id,
-          action: "delete",
-        },
-        inverse: {
-          op: "create",
-          target,
-          data: stripId(block),
-        },
-        target,
-        dispatchSource: "admin_block_delete",
-      });
-    } catch (error) {
-      console.error("delete block failed", error);
-      alert(userFacingErrorMessage(error, "削除に失敗しました"));
-      button.disabled = false;
-    }
-  });
-  return button;
-}
-
-function blockEditButton(block) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "btn btn-secondary btn-row";
-  button.textContent = "編集";
-  button.dataset.write = "true";
-  button.addEventListener("click", () => enterScheduleSubView({
-    title: "予約不可を編集",
-    submitLabel: "保存",
-    mount: (container) => mountBlockForm({ container, existing: block }),
-  }));
-  return button;
-}
-
-async function submitSelectedSchedule(form) {
-  const error = form.querySelector("[data-schedule-error]");
-  setError(error, EMPTY_ERROR_MESSAGE);
-  const submitButton = form.querySelector('button[type="submit"]');
-  if (submitButton) submitButton.disabled = true;
-
+  const save = byId("rdBlkSave");
+  save.disabled = true;
   try {
-    const values = readScheduleForm(form);
-    const message = validateSchedule(values);
-    if (message) {
-      setError(error, message);
-      if (submitButton) submitButton.disabled = false;
-      return;
-    }
+    const id = editId || `${selectedDate}_${start}_${end}`;
+    const target = `blocks/${id}`;
+    await commitWrite({
+      op: editingBlock ? "updateBlock" : "addBlock",
+      domain: {
+        collection: "blocks", docId: id, action: editingBlock ? "update" : "set",
+        data: {
+          date: selectedDate, start_time: start, end_time: end, active: true,
+          created_at: editingBlock?.created_at || serverTimestamp(), updated_at: serverTimestamp(),
+        },
+      },
+      inverse: editingBlock ? { op: "update", target, data: stripId(editingBlock) } : { op: "delete", target },
+      target, dispatchSource: editingBlock ? "admin_block_update" : "admin_block_add",
+    });
+    closeSheets();
+    showToast(editingBlock ? "受付停止を変更しました" : "受付停止を追加しました");
+  } catch (err) {
+    console.error("block write failed", err);
+    putError("rdBlkError", jpError(err, "保存に失敗しました"));
+    save.disabled = isDegraded();
+  }
+}
 
-    const existing = schedulesByDate.get(selectedDate);
-    const target = `schedules/${selectedDate}`;
+/* ============ お店設定シート ============ */
+let storeChoice = "";
+function openStoreSheet() {
+  if (isDegraded()) return;
+  const reservations = reservationsForDate(selectedDate);
+  const schedule = schedulesByDate.get(selectedDate);
+  const hasBooking = reservations.length > 0;
+  const current = resolveDayStore(schedule, reservations) || "";
+  storeChoice = current;
+
+  byId("rdStoreOpts").querySelectorAll("button[data-s]").forEach((b) => {
+    b.classList.toggle("on", b.dataset.s === current);
+    b.disabled = hasBooking && b.dataset.s !== current;
+  });
+  byId("rdStoreLockNote").hidden = !hasBooking;
+  toggleEventFields(current === "event");
+  byId("rdEvName").value = schedule?.event_name || "";
+  byId("rdEvVenue").value = schedule?.event_venue || "";
+  byId("rdStMemo").value = schedule?.note || "";
+  byId("rdStDelete").hidden = !schedule?.id;
+  byId("rdStDelete").disabled = isDegraded();
+  byId("rdStSave").disabled = isDegraded();
+  putError("rdStError", "");
+  openSheet("rdSheetStore");
+}
+
+function pickStore(s) {
+  storeChoice = s;
+  byId("rdStoreOpts").querySelectorAll("button[data-s]").forEach((b) => b.classList.toggle("on", b.dataset.s === s));
+  toggleEventFields(s === "event");
+}
+
+function toggleEventFields(show) {
+  byId("rdEventFields").hidden = !show;
+}
+
+async function saveStore() {
+  if (isDegraded()) return;
+  putError("rdStError", "");
+  if (!storeChoice) { putError("rdStError", "お店を選んでください"); return; }
+  const eventName = byId("rdEvName").value.trim();
+  const eventVenue = byId("rdEvVenue").value.trim();
+  const memo = byId("rdStMemo").value.trim();
+  if (storeChoice === "event" && !eventName) {
+    byId("rdEvName").classList.add("invalid");
+    byId("rdEvName").focus();
+    putError("rdStError", "イベント名を入力してください");
+    return;
+  }
+
+  const existing = schedulesByDate.get(selectedDate);
+  const target = `schedules/${selectedDate}`;
+  const save = byId("rdStSave");
+  save.disabled = true;
+  try {
     await commitWrite({
       op: "setSchedule",
       domain: {
-        collection: "schedules",
-        docId: selectedDate,
-        action: "set",
+        collection: "schedules", docId: selectedDate, action: "set",
         data: {
-          date: selectedDate,
-          planned_store: values.planned_store,
-          event_name: values.planned_store === "event" ? values.event_name : "",
-          event_venue: values.planned_store === "event" ? values.event_venue : "",
-          note: values.note,
-          active: true,
-          created_at: existing?.created_at || serverTimestamp(),
-          updated_at: serverTimestamp(),
+          date: selectedDate, planned_store: storeChoice,
+          event_name: storeChoice === "event" ? eventName : "",
+          event_venue: storeChoice === "event" ? eventVenue : "",
+          note: memo, active: true,
+          created_at: existing?.created_at || serverTimestamp(), updated_at: serverTimestamp(),
         },
       },
-      inverse: existing
-        ? { op: "update", target, data: stripId(existing) }
-        : { op: "delete", target },
-      target,
-      dispatchSource: "admin_schedule_set",
+      inverse: existing ? { op: "update", target, data: stripId(existing) } : { op: "delete", target },
+      target, dispatchSource: "admin_schedule_set",
     });
-    formDirty = false;
-  } catch (errorObject) {
-    console.error("schedule write failed", errorObject);
-    setError(error, userFacingErrorMessage(errorObject, "保存に失敗しました"));
-  } finally {
-    if (submitButton) submitButton.disabled = false;
+    closeSheets();
+    showToast("この日のお店を更新しました");
+  } catch (err) {
+    console.error("schedule write failed", err);
+    putError("rdStError", jpError(err, "保存に失敗しました"));
+    save.disabled = isDegraded();
   }
 }
 
-async function deleteSelectedSchedule() {
-  const schedule = schedulesByDate.get(selectedDate);
-  if (!schedule?.id) return;
-  if (!confirm(`${selectedDate} の営業予定を削除しますか？`)) return;
-
-  const target = `schedules/${schedule.id}`;
+async function deleteStore() {
+  if (isDegraded()) return;
+  const existing = schedulesByDate.get(selectedDate);
+  if (!existing?.id) return;
+  const target = `schedules/${existing.id}`;
+  const btn = byId("rdStDelete");
+  btn.disabled = true;
   try {
     await commitWrite({
       op: "deleteSchedule",
-      domain: {
-        collection: "schedules",
-        docId: schedule.id,
-        action: "delete",
-      },
-      inverse: {
-        op: "create",
-        target,
-        data: stripId(schedule),
-      },
-      target,
-      dispatchSource: "admin_schedule_delete",
+      domain: { collection: "schedules", docId: existing.id, action: "delete" },
+      inverse: { op: "create", target, data: stripId(existing) },
+      target, dispatchSource: "admin_schedule_delete",
     });
-    formDirty = false;
-  } catch (error) {
-    console.error("delete schedule failed", error);
-    alert(userFacingErrorMessage(error, "削除に失敗しました"));
+    closeSheets();
+    showToast("この日のお店設定を解除しました");
+  } catch (err) {
+    console.error("delete schedule failed", err);
+    putError("rdStError", jpError(err, "解除に失敗しました"));
+    btn.disabled = isDegraded();
   }
 }
 
-function readScheduleForm(form) {
-  const data = new FormData(form);
-  return {
-    planned_store: String(data.get("planned_store") || ""),
-    event_name: String(data.get("event_name") || "").trim(),
-    event_venue: String(data.get("event_venue") || "").trim(),
-    note: String(data.get("note") || "").trim(),
-  };
+/* ============ キャンセル（確認ダイアログ → ソフトデリート → トースト復活） ============ */
+function requestDelete(kind, item) {
+  if (!item) return;
+  pendingDelete = { kind, item };
+  const titleNode = byId("rdCfTitle");
+  const sumNode = byId("rdCfSum");
+  const okNode = byId("rdCfOk");
+  if (kind === "booking") {
+    const end = item.end_time || addMinutes(item.start_time, COURSE_MIN[String(item.course_code)] || 0);
+    titleNode.textContent = "この予約をキャンセルしますか？";
+    sumNode.textContent = `${item.start_time}〜${end}　${item.customer_name || ""}　${item.course_code || ""}分`;
+    okNode.textContent = "予約をキャンセルする";
+  } else {
+    titleNode.textContent = "この受付停止を解除しますか？";
+    sumNode.textContent = `${item.start_time}〜${item.end_time}　受付停止`;
+    okNode.textContent = "受付停止を解除する";
+  }
+  okNode.disabled = isDegraded();
+  byId("rdScrim2").classList.add("show");
+  byId("rdConfirm").classList.add("show");
 }
 
-function validateSchedule(values) {
-  if (!PLANNED_STORES.some(([value]) => value === values.planned_store)) return "営業予定を選択してください";
-  if (values.planned_store === "event" && !values.event_name) return "イベント名を入力してください";
-  return "";
+function closeConfirm() {
+  byId("rdConfirm")?.classList.remove("show");
+  byId("rdScrim2")?.classList.remove("show");
+  pendingDelete = null;
 }
 
-function mountBlockForm({ container, existing = null }) {
-  const initial = {
-    start_time: existing?.start_time || "09:00",
-    end_time: existing?.end_time || "10:00",
-  };
-  const form = document.createElement("form");
-  form.className = "modal-form";
-  form.noValidate = true;
-  form.innerHTML = `
-    <div class="form-grid">
-      <div class="form-field">
-        <span>日付</span>
-        <strong>${escapeText(selectedDate)}</strong>
-      </div>
-      <label class="form-field">
-        <span>開始時刻</span>
-        <select name="start_time" required>${timeOptions(initial.start_time, false)}</select>
-      </label>
-      <label class="form-field">
-        <span>終了時刻</span>
-        <select name="end_time" required>${timeOptions(initial.end_time, true)}</select>
-      </label>
-      <div class="preset-row form-field-wide">
-        <button type="button" class="btn btn-secondary btn-row" data-preset="morning">午前休</button>
-        <button type="button" class="btn btn-secondary btn-row" data-preset="afternoon">午後休</button>
-        <button type="button" class="btn btn-secondary btn-row" data-preset="all">終日</button>
-      </div>
-    </div>
-    <p class="form-error" data-form-error hidden></p>
-  `;
-  container.appendChild(form);
-  form.querySelectorAll("[data-preset]").forEach((button) => {
-    button.addEventListener("click", () => applyPreset(form, button.dataset.preset));
-  });
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    await submit();
-  });
+function isConfirmOpen() {
+  return Boolean(byId("rdConfirm")?.classList.contains("show"));
+}
 
-  let busy = false;
-  async function submit() {
-    if (busy) return { ok: false };
-    busy = true;
-    const error = form.querySelector("[data-form-error]");
-    setError(error, EMPTY_ERROR_MESSAGE);
-    try {
-      const values = readBlockForm(form);
-      const message = await validateBlock(values, existing?.id);
-      if (message) {
-        setError(error, message);
-        busy = false;
-        return { ok: false };
-      }
-      const id = existing?.id || `${values.date}_${values.start_time}_${values.end_time}`;
+async function confirmDelete() {
+  if (isDegraded() || !pendingDelete) return;
+  const { kind, item } = pendingDelete;
+  const ok = byId("rdCfOk");
+  ok.disabled = true;
+  try {
+    if (kind === "booking") {
+      const id = item.reservation_id || item.id;
+      lastCancelled = { id, snapshot: { ...item } };
+      await cancelReservation(id);
+      closeConfirm();
+      closeSheets();
+      showToast("予約をキャンセルしました", true, 6000);
+    } else {
+      const id = item.id;
       const target = `blocks/${id}`;
+      lastCancelled = null;
       await commitWrite({
-        op: existing ? "updateBlock" : "addBlock",
-        domain: {
-          collection: "blocks",
-          docId: id,
-          action: existing ? "update" : "set",
-          data: {
-            date: values.date,
-            start_time: values.start_time,
-            end_time: values.end_time,
-            active: true,
-            created_at: existing?.created_at || serverTimestamp(),
-            updated_at: serverTimestamp(),
-          },
-        },
-        inverse: existing
-          ? { op: "update", target, data: stripId(existing) }
-          : { op: "delete", target },
-        target,
-        dispatchSource: existing ? "admin_block_update" : "admin_block_add",
+        op: "deleteBlock",
+        domain: { collection: "blocks", docId: id, action: "delete" },
+        inverse: { op: "create", target, data: stripId(item) },
+        target, dispatchSource: "admin_block_delete",
       });
-      busy = false;
-      return { ok: true };
-    } catch (err) {
-      console.error("block write failed", err);
-      setError(error, userFacingErrorMessage(err, "保存に失敗しました"));
-      busy = false;
-      return { ok: false };
+      closeConfirm();
+      closeSheets();
+      showToast("受付停止を解除しました");
     }
+  } catch (err) {
+    console.error("delete failed", err);
+    closeConfirm();
+    showToast(jpError(err, "操作に失敗しました"));
   }
-
-  return { form, submit, dispose: () => form.remove() };
 }
 
-function readBlockForm(form) {
-  const data = new FormData(form);
-  return {
-    date: selectedDate,
-    start_time: String(data.get("start_time") || ""),
-    end_time: String(data.get("end_time") || ""),
-  };
-}
-
-async function validateBlock(values, currentBlockId) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(values.date)) return "日付を選択してください";
-  if (!isValidTime(values.start_time) || !isValidTime(values.end_time)) return "時刻の形式が不正です";
-  const start = timeToMinutes(values.start_time);
-  const end = timeToMinutes(values.end_time);
-  if (end <= start) return "終了時刻は開始時刻より後にしてください";
-  if (start < OPEN_MINUTES || end > CLOSE_MINUTES) return "営業時間内で指定してください（09:00-21:00）";
-
-  const blockCollision = selectedBlocks.find((block) => {
-    if (block.id === currentBlockId) return false;
-    return timeRangesOverlap(values.start_time, values.end_time, block.start_time, block.end_time);
-  });
-  if (blockCollision) return `${blockCollision.start_time}-${blockCollision.end_time} の予約不可と重複しています`;
-
-  const reservationCollision = await findBlockReservationCollision(values);
-  if (reservationCollision) {
-    return `${reservationCollision.start_time}-${reservationCollision.end_time} の予約と重複しています`;
+async function restoreLastCancelled() {
+  hideToast();
+  if (!lastCancelled || isDegraded()) return;
+  const { id, snapshot } = lastCancelled;
+  lastCancelled = null;
+  // 復活前に衝突再チェック（キャンセル後に同枠へ別予約が入った可能性）
+  const start = snapshot.start_time;
+  const end = snapshot.end_time || addMinutes(start, COURSE_MIN[String(snapshot.course_code)] || 0);
+  const collision = findReservationCollision(start, end, id);
+  const blockCol = findBlockCollision(start, end);
+  if (collision || blockCol) {
+    showToast("この時間に別の予定が入ったため戻せませんでした");
+    return;
   }
-
-  return "";
-}
-
-async function findBlockReservationCollision(values) {
-  const snapshot = await getDocs(
-    query(
-      collection(db, "reservations"),
-      where("visit_date", "==", values.date),
-      where("status", "==", "active"),
-    ),
-  );
-
-  return snapshot.docs
-    .map((item) => ({ id: item.id, ...item.data() }))
-    .find((item) => timeRangesOverlap(values.start_time, values.end_time, item.start_time, item.end_time));
-}
-
-function resolveDayBadgeStore(schedule, reservations) {
-  const planned = schedule?.planned_store;
-  if (planned === "tanushimaru" || planned === "dazaifu" || planned === "event") {
-    return planned;
+  const target = `reservations/${id}`;
+  try {
+    await commitWrite({
+      op: "restoreReservation",
+      domain: { collection: "reservations", docId: id, action: "update", data: { status: "active", updated_at: serverTimestamp() } },
+      inverse: { op: "update", target, data: { status: "cancelled" }, precondition: { type: "source_revision_match" } },
+      target, dispatchSource: "admin_reservation_restore",
+    });
+    showToast("予約を元に戻しました");
+  } catch (err) {
+    console.error("restore failed", err);
+    showToast(jpError(err, "元に戻せませんでした"));
   }
-  const codes = new Set();
-  for (const r of reservations || []) {
-    const store = reservationStoreCode(r);
-    if (store) {
-      codes.add(store);
-    }
-  }
-  if (codes.size === 1) return [...codes][0];
-  return null;
 }
 
-function reservationStoreCode(reservation) {
-  const store = reservation?.store_code;
-  if (store === "tanushimaru" || store === "dazaifu" || store === "event") return store;
-  return "";
+/* ============ トースト ============ */
+function showToast(msg, undoable = false, ms = 3600) {
+  byId("rdToastMsg").textContent = msg;
+  byId("rdToastUndo").hidden = !undoable;
+  byId("rdToast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, ms);
+}
+function hideToast() {
+  byId("rdToast")?.classList.remove("show");
 }
 
-function storeBadge(store) {
-  const badge = document.createElement("span");
-  badge.className = "month-badge";
-  if (store === "event") badge.classList.add("is-event");
-  badge.textContent = STORE_BADGE_LABELS[store] || storeLabel(store);
-  badge.title = storeLabel(store);
-  return badge;
-}
-
-function emptyRow(text) {
-  const row = document.createElement("div");
-  row.className = "row-empty";
-  row.textContent = text;
-  return row;
-}
-
-function setMonthStatus(text) {
-  const status = document.getElementById("homeMonthStatus");
-  if (status) status.textContent = text;
-}
-
+/* ============ ロジック ============ */
 function reservationsForDate(date) {
   return monthReservations
-    .filter((reservation) => reservation.visit_date === date && reservation.status === "active")
-    .sort(compareReservationTime);
+    .filter((r) => r.visit_date === date && r.status === "active")
+    .sort((a, b) => `${a.start_time || ""}${a.reservation_id || a.id || ""}`.localeCompare(`${b.start_time || ""}${b.reservation_id || b.id || ""}`));
 }
 
-function compareReservationTime(a, b) {
-  return `${a.start_time || ""}${a.reservation_id || a.id || ""}`.localeCompare(
-    `${b.start_time || ""}${b.reservation_id || b.id || ""}`,
-  );
+/* ---- 純粋関数（物理制約 validation / sort・テスト対象） ---- */
+// 予定リストの並び：時刻昇順、同時刻は予約を予約不可より先に
+function sortDayItems(reservations, blocks) {
+  const rank = (it) => `${it.t || "99:99"}${it.kind === "booking" ? "0" : "1"}${it.id}`;
+  return [
+    ...(reservations || []).map((r) => ({ kind: "booking", t: r.start_time || "", e: r.end_time || "", id: r.reservation_id || r.id || "", value: r })),
+    ...(blocks || []).map((b) => ({ kind: "block", t: b.start_time || "", e: b.end_time || "", id: b.id || "", value: b })),
+  ].sort((a, c) => rank(a).localeCompare(rank(c)));
 }
 
-function storeLabel(store) {
-  return STORE_LABELS[store] || store || "店舗未設定";
-}
-
-function formatDateWithWday(value) {
-  const date = parseDateKey(value);
-  return `${value}（${WDAYS[date.getDay()]}）`;
-}
-
-function syncMonthPicker() {
-  const yearSelect = document.getElementById("homeMonthYear");
-  const monthSelect = document.getElementById("homeMonthSelect");
-  if (!yearSelect || !monthSelect) return;
-
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth() + 1;
-  const firstOption = Number(yearSelect.options[0]?.value);
-  const lastOption = Number(yearSelect.options[yearSelect.options.length - 1]?.value);
-  if (!yearSelect.options.length || year <= firstOption || year >= lastOption) {
-    yearSelect.replaceChildren(...yearOptions(year));
-  }
-  yearSelect.value = String(year);
-
-  if (!monthSelect.options.length) {
-    monthSelect.replaceChildren(...monthOptions());
-  }
-  monthSelect.value = String(month);
-}
-
-function yearOptions(centerYear) {
-  const options = [];
-  for (let year = centerYear - YEAR_PICKER_RADIUS; year <= centerYear + YEAR_PICKER_RADIUS; year += 1) {
-    const option = document.createElement("option");
-    option.value = String(year);
-    option.textContent = `${year} 年`;
-    options.push(option);
-  }
-  return options;
-}
-
-function monthOptions() {
-  const options = [];
-  for (let month = 1; month <= 12; month += 1) {
-    const option = document.createElement("option");
-    option.value = String(month);
-    option.textContent = `${month} 月`;
-    options.push(option);
-  }
-  return options;
-}
-
-function stripId(value) {
-  const { id, ...data } = value;
-  return data;
-}
-
-function createModal({ title, submitLabel, titleId }) {
-  const root = getModalRoot();
-  const overlay = document.createElement("div");
-  overlay.className = "modal-overlay";
-  overlay.innerHTML = `
-    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="${titleId}">
-      <div class="modal-head">
-        <h2 id="${titleId}">${escapeText(title)}</h2>
-        <button type="button" class="modal-close" aria-label="閉じる">×</button>
-      </div>
-      <div class="modal-body"></div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" data-modal-cancel>キャンセル</button>
-        <button type="button" class="btn" data-modal-submit data-write="true"${isDegraded() ? " disabled" : ""}>${escapeText(submitLabel)}</button>
-      </div>
-    </div>
-  `;
-
-  const modal = {
-    overlay,
-    body: overlay.querySelector(".modal-body"),
-    submitButton: overlay.querySelector("[data-modal-submit]"),
-  };
-  overlay.addEventListener("click", (event) => {
-    if (event.target === overlay) closeModal(modal);
+// 予約の物理制約：名前・店舗・時刻境界・予約/予約不可の時刻重複（1日1店舗は店舗ロック UI 側で担保）
+function validateBookingValues({ start, end, store, name }, { reservations = [], blocks = [], excludeId = null } = {}) {
+  if (!name) return "お名前を入力してください";
+  if (!store) return "お店を選んでください";
+  if (!isValidTime(start) || !end) return "開始時刻が不正です";
+  if (strToMin(start) < OPEN_MIN || strToMin(end) > CLOSE_MIN) return "営業時間外です（09:00-21:00）";
+  const r = reservations.find((x) => {
+    const id = x.reservation_id || x.id;
+    if (excludeId && id === excludeId) return false;
+    return timeOverlap(start, end, x.start_time, x.end_time);
   });
-  overlay.querySelector("[data-modal-cancel]")?.addEventListener("click", () => closeModal(modal));
-  overlay.querySelector(".modal-close")?.addEventListener("click", () => closeModal(modal));
-  modal.onKeydown = (event) => {
-    if (event.key === "Escape") closeModal(modal);
-  };
-  root.appendChild(overlay);
-  return modal;
+  if (r) return `${r.start_time}〜${r.end_time} の予約と重複しています`;
+  const b = blocks.find((x) => timeOverlap(start, end, x.start_time, x.end_time));
+  if (b) return `${b.start_time}〜${b.end_time} の予約不可と重複しています`;
+  return "";
 }
 
-function showModal(modal) {
-  document.addEventListener("keydown", modal.onKeydown);
-  modal.overlay.querySelector("input, select, textarea, button")?.focus();
+// 予約不可の物理制約：時刻妥当・営業時間内・予約不可/予約の時刻重複（編集中の自身は除外）
+function validateBlockValues({ start, end }, { reservations = [], blocks = [], excludeId = null } = {}) {
+  if (!isValidTime(start) || !isValidTime(end)) return "時刻が不正です";
+  if (strToMin(end) <= strToMin(start)) return "終了時刻は開始時刻より後にしてください";
+  if (strToMin(start) < OPEN_MIN || strToMin(end) > CLOSE_MIN) return "営業時間内（9:00〜21:00）で指定してください";
+  const b = blocks.find((x) => {
+    if (excludeId && x.id === excludeId) return false;
+    return timeOverlap(start, end, x.start_time, x.end_time);
+  });
+  if (b) return `${b.start_time}〜${b.end_time} の予約不可と重複しています`;
+  const r = reservations.find((x) => timeOverlap(start, end, x.start_time, x.end_time));
+  if (r) return `${r.start_time}〜${r.end_time} の予約と重複しています`;
+  return "";
 }
 
-function closeModal(modal) {
-  document.removeEventListener("keydown", modal.onKeydown);
-  modal.overlay.remove();
-}
-
-function getModalRoot() {
-  let root = document.getElementById("modalRoot");
-  if (!root) {
-    root = document.createElement("div");
-    root.id = "modalRoot";
-    document.body.appendChild(root);
+// その日の店舗を決定：planned_store(salon/event) 優先、無ければ active 予約の店から（1店舗のみなら）
+function resolveDayStore(schedule, reservations) {
+  const planned = schedule?.planned_store;
+  if (planned === "tanushimaru" || planned === "dazaifu" || planned === "event") return planned;
+  const codes = new Set();
+  for (const r of reservations || []) {
+    const s = r.store_code;
+    if (s === "tanushimaru" || s === "dazaifu" || s === "event") codes.add(s);
   }
-  return root;
+  return codes.size === 1 ? [...codes][0] : null;
 }
 
-function radioOptions(name, options, selected) {
-  return options
-    .map(
-      ([value, label]) => `
-        <label class="radio-pill">
-          <input type="radio" name="${name}" value="${value}"${value === selected ? " checked" : ""}>
-          <span>${label}</span>
-        </label>
-      `,
-    )
-    .join("");
+// 予約フォームの店舗ロック：その日に salon が決まっていれば返す（event は予約不可なので null=選択させない…ではなく salon のみロック）
+function resolveLockedStore(excludeReservation) {
+  const reservations = reservationsForDate(selectedDate).filter((r) => {
+    const id = r.reservation_id || r.id;
+    const exId = excludeReservation?.reservation_id || excludeReservation?.id;
+    return id !== exId;
+  });
+  const codes = new Set();
+  for (const r of reservations) {
+    if (r.store_code === "tanushimaru" || r.store_code === "dazaifu") codes.add(r.store_code);
+  }
+  if (codes.size === 1) return [...codes][0];
+  const planned = schedulesByDate.get(selectedDate)?.planned_store;
+  if (planned === "tanushimaru" || planned === "dazaifu") return planned;
+  return null; // 予約0 かつ salon 未設定 → 選択させる
 }
 
-function applyPreset(form, preset) {
-  const start = form.elements.start_time;
-  const end = form.elements.end_time;
-  if (!start || !end) return;
+function findReservationCollision(start, end, excludeId) {
+  return reservationsForDate(selectedDate).find((r) => {
+    const id = r.reservation_id || r.id;
+    if (excludeId && id === excludeId) return false;
+    return timeOverlap(start, end, r.start_time, r.end_time);
+  }) || null;
+}
 
-  if (preset === "morning") {
-    start.value = "09:00";
-    end.value = "12:00";
-  } else if (preset === "afternoon") {
-    start.value = "12:00";
-    end.value = "21:00";
-  } else if (preset === "all") {
-    start.value = "09:00";
-    end.value = "21:00";
+function findBlockCollision(start, end) {
+  return selectedBlocks.find((b) => timeOverlap(start, end, b.start_time, b.end_time)) || null;
+}
+
+function nextFreeStart() {
+  const used = reservationsForDate(selectedDate).map((r) => strToMin(r.start_time));
+  for (let m = OPEN_MIN; m <= CLOSE_MIN - 60; m += 60) {
+    if (!used.includes(m)) return minutesToStr(m);
+  }
+  return "14:00";
+}
+
+/* ============ ユーティリティ ============ */
+function byId(id) { return document.getElementById(id); }
+function setMonthStatus(text) { const n = byId("rdMonthStatus"); if (n) n.textContent = text; }
+function putError(id, msg) { const n = byId(id); if (!n) return; n.textContent = msg; n.hidden = !msg; }
+
+function fillTimeSelect(sel, from, to) {
+  if (!sel) return;
+  sel.innerHTML = "";
+  for (let m = from; m <= to; m += TIME_STEP) {
+    const t = minutesToStr(m);
+    const o = document.createElement("option");
+    o.value = t; o.textContent = t;
+    sel.appendChild(o);
   }
 }
 
-function timeOptions(selected, includeEnd) {
-  let html = "";
-  const start = includeEnd ? OPEN_MINUTES + 30 : OPEN_MINUTES;
-  for (let value = start; value <= CLOSE_MINUTES; value += 30) {
-    const time = minutesToTime(value);
-    html += `<option value="${time}"${time === selected ? " selected" : ""}>${time}</option>`;
-  }
-  return html;
+function isValidTime(v) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(v); }
+function strToMin(v) { if (!isValidTime(v)) return 0; const [h, m] = v.split(":").map(Number); return h * 60 + m; }
+function minutesToStr(v) { return `${String(Math.floor(v / 60)).padStart(2, "0")}:${String(v % 60).padStart(2, "0")}`; }
+function addMinutes(start, mins) { if (!isValidTime(start) || !mins) return ""; return minutesToStr(strToMin(start) + mins); }
+function timeOverlap(s1, e1, s2, e2) { return strToMin(s1) < strToMin(e2) && strToMin(e1) > strToMin(s2); }
+
+function stripId(value) { const { id, ...rest } = value; return rest; }
+
+function randomHex(length) {
+  const bytes = new Uint8Array(Math.ceil(length / 2));
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, length);
 }
 
-function setError(node, message) {
-  if (!node) return;
-  node.textContent = message;
-  node.hidden = !message;
-}
-
-function userFacingErrorMessage(error, fallback) {
+function jpError(error, fallback) {
   const message = String(error?.message || "");
   return /[ぁ-んァ-ヴ一-龯]/.test(message) ? message : fallback;
 }
 
-function timeRangesOverlap(startA, endA, startB, endB) {
-  return timeToMinutes(startA) < timeToMinutes(endB) && timeToMinutes(endA) > timeToMinutes(startB);
-}
-
-function isValidTime(value) {
-  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
-}
-
-function timeToMinutes(value) {
-  if (!isValidTime(value)) return 0;
-  const [hour, minute] = value.split(":").map(Number);
-  return hour * 60 + minute;
-}
-
-function minutesToTime(value) {
-  const hour = Math.floor(value / 60);
-  const minute = value % 60;
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-}
-
 function escapeText(value) {
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function todayKey() {
-  const parts = new Intl.DateTimeFormat("ja-JP", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
+  const parts = new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+  const v = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+  return `${v.year}-${v.month}-${v.day}`;
 }
+function parseDateKey(value) { const [y, m, d] = value.split("-").map(Number); return new Date(y, m - 1, d); }
+function dateKey(date) { return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-"); }
+function startOfMonth(date) { return new Date(date.getFullYear(), date.getMonth(), 1); }
+function endOfMonth(date) { return new Date(date.getFullYear(), date.getMonth() + 1, 0); }
+function startOfWeek(date) { const s = new Date(date); s.setDate(s.getDate() - s.getDay()); return s; }
+function endOfWeek(date) { const e = new Date(date); e.setDate(e.getDate() + (6 - e.getDay())); return e; }
+function addMonths(date, n) { return new Date(date.getFullYear(), date.getMonth() + n, 1); }
+function monthQueryRange(month) { return { start: dateKey(startOfMonth(month)), end: dateKey(endOfMonth(addMonths(month, 1))) }; }
 
-function parseDateKey(value) {
-  const [year, month, day] = value.split("-").map((part) => Number(part));
-  return new Date(year, month - 1, day);
-}
-
-function dateKey(date) {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
-}
-
-function startOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function endOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-}
-
-function startOfWeek(date) {
-  const start = new Date(date);
-  start.setDate(start.getDate() - start.getDay());
-  return start;
-}
-
-function endOfWeek(date) {
-  const end = new Date(date);
-  end.setDate(end.getDate() + (6 - end.getDay()));
-  return end;
-}
-
-function addMonths(date, amount) {
-  return new Date(date.getFullYear(), date.getMonth() + amount, 1);
-}
-
-function monthQueryRange(month) {
-  return {
-    start: dateKey(startOfMonth(month)),
-    end: dateKey(endOfMonth(addMonths(month, 1))),
+/* ============ アイコン ============ */
+function icon(name, size = 20, sw = 2) {
+  const paths = {
+    chevDown: '<polyline points="6 9 12 15 18 9"></polyline>',
+    chevRight: '<polyline points="9 18 15 12 9 6"></polyline>',
+    plus: '<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>',
+    noEntry: '<circle cx="12" cy="12" r="9"></circle><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line>',
+    x: '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>',
+    clock: '<circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline>',
+    lock: '<rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>',
+    check: '<polyline points="20 6 9 17 4 12"></polyline>',
+    trash: '<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>',
   };
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || ""}</svg>`;
 }
