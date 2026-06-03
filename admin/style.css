@@ -257,7 +257,8 @@ button {
 
 .login-page {
   background:
-    linear-gradient(180deg, var(--primary) 0, var(--primary-dk) 42%, var(--soft-bg) 42%, var(--bg) 100%);
+    url("./login-bg.jpg") center / cover no-repeat fixed,
+    #C8A8E0;
 }
 
 .login-layout {
