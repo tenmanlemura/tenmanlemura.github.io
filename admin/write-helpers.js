@@ -81,11 +81,6 @@ export async function commitWrite({ op, domain, inverse, target, dispatchSource 
     console.warn("build_state flag update failed:", err);
   });
 
-  // 旧 dispatch 第 1 線（移行期間中は build_state 経路と並走・S7 で削除予定）。
-  fireDispatch(newRevision, dispatchSource).catch((err) => {
-    console.warn("dispatch fire-and-forget failed:", err);
-  });
-
   return newRevision;
 }
 
@@ -99,77 +94,6 @@ async function flagBuildNeeded(revision) {
     written_at: serverTimestamp(),
     source_revision: revision,
   });
-}
-
-async function fireDispatch(revision, source) {
-  const url = window.__TENMAN_DISPATCH_URL;
-  if (!url) {
-    console.warn("dispatch URL not configured");
-    return;
-  }
-
-  const currentUser = auth.currentUser;
-  if (!currentUser) {
-    console.warn("dispatch skipped: user signed out before dispatch");
-    return;
-  }
-
-  const token = await currentUser.getIdToken();
-  const body = JSON.stringify({ source, revision, admin_token: token });
-
-  // exponential backoff retry: 0s（初回）+ 1s + 3s + 9s → 最大 4 試行・合計 ~13 秒
-  // network 瞬断 / 5xx / 408 / 429 は retry。4xx（429/408 除く）は client error として即停止。
-  // 全 retry 失敗時も throw しない（Watchdog 第 2 線が 1 分以内に補強発火する設計）。
-  //
-  // 重要：dispatch URL は GAS Web App（DispatchEndpoint.gs）。GAS の ContentService は HTTP 200 を返し、
-  // 実際の status は JSON body の {ok: bool, status: N} で表現される（DispatchEndpoint.gs::jsonResponse_）。
-  // したがって res.ok だけでは GAS 由来の 4xx/5xx を見逃す。JSON body も parse して effectiveStatus を判定する。
-  // body が JSON でない（302 redirect → googleusercontent 405 / empty body）場合は res.ok にフォールバック。
-  const DELAYS_MS = [1000, 3000, 9000];
-  let lastError = null;
-  for (let attempt = 0; attempt <= DELAYS_MS.length; attempt += 1) {
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-        keepalive: true,
-      });
-
-      // GAS 由来の JSON body を優先判定。parse 失敗 / フィールド欠落時は HTTP status fallback。
-      let payload = null;
-      try {
-        const text = await res.text();
-        if (text) payload = JSON.parse(text);
-      } catch (_) {
-        payload = null;
-      }
-      const effectiveOk = payload && typeof payload.ok === "boolean" ? payload.ok : res.ok;
-      const effectiveStatus = payload && typeof payload.status === "number" ? payload.status : res.status;
-
-      if (effectiveOk) {
-        if (attempt > 0) {
-          console.log(`dispatch succeeded after ${attempt} retry(s) (revision=${revision})`);
-        }
-        return;
-      }
-      lastError = new Error(`dispatch failed (status=${effectiveStatus})`);
-      // 4xx は client error として即停止（408 timeout / 429 rate limit のみ retry）
-      if (effectiveStatus >= 400 && effectiveStatus < 500 && effectiveStatus !== 408 && effectiveStatus !== 429) {
-        console.warn(`dispatch client error, no retry (status=${effectiveStatus})`);
-        return;
-      }
-    } catch (err) {
-      lastError = err;
-    }
-    if (attempt < DELAYS_MS.length) {
-      await new Promise((resolve) => setTimeout(resolve, DELAYS_MS[attempt]));
-    }
-  }
-  console.warn(
-    `dispatch failed after ${DELAYS_MS.length} retries (revision=${revision}):`,
-    lastError,
-  );
 }
 
 export async function logSkipOnly({ action, target, reason }) {
