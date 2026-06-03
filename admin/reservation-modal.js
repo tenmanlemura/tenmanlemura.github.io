@@ -34,10 +34,10 @@ export function mountReservationForm({ container, existing = null, presetDate = 
   form.noValidate = true;
   form.innerHTML = `
     <div class="form-grid">
-      <label class="form-field">
+      <div class="form-field">
         <span>日付<em class="form-required" aria-hidden="true">必須</em></span>
-        <input type="date" name="visit_date" value="${escapeAttr(initial.visit_date)}" required aria-required="true">
-      </label>
+        ${dateSelectGroup(initial.visit_date)}
+      </div>
       <label class="form-field">
         <span>開始時刻<em class="form-required" aria-hidden="true">必須</em></span>
         <select name="start_time" required aria-required="true">${timeOptions(initial.start_time, false)}</select>
@@ -71,6 +71,7 @@ export function mountReservationForm({ container, existing = null, presetDate = 
     <p class="form-error" data-form-error hidden></p>
   `;
   container.appendChild(form);
+  setupDateSelectGroup(form);
   form.addEventListener("input", () => updateEndTime(form));
   form.addEventListener("change", () => updateEndTime(form));
   setupStoreAvailability(form, existing);
@@ -178,10 +179,10 @@ export function openReservationModal({ mode, presetDate, existing } = {}) {
   form.noValidate = true;
   form.innerHTML = `
     <div class="form-grid">
-      <label class="form-field">
+      <div class="form-field">
         <span>日付<em class="form-required" aria-hidden="true">必須</em></span>
-        <input type="date" name="visit_date" value="${escapeAttr(initial.visit_date)}" required aria-required="true">
-      </label>
+        ${dateSelectGroup(initial.visit_date)}
+      </div>
       <label class="form-field">
         <span>開始時刻<em class="form-required" aria-hidden="true">必須</em></span>
         <select name="start_time" required aria-required="true">${timeOptions(initial.start_time, false)}</select>
@@ -216,6 +217,7 @@ export function openReservationModal({ mode, presetDate, existing } = {}) {
   `;
 
   modal.body.appendChild(form);
+  setupDateSelectGroup(form);
   modal.submitButton.addEventListener("click", () => form.requestSubmit());
   form.addEventListener("input", () => updateEndTime(form));
   form.addEventListener("change", () => updateEndTime(form));
@@ -516,6 +518,77 @@ function applyStoreLock(form, lock) {
     note.textContent = "";
     note.hidden = true;
   }
+}
+
+function dateSelectGroup(visitDate) {
+  const parsed = /^(\d{4})-(\d{2})-(\d{2})$/.exec(visitDate || "");
+  const today = new Date();
+  const baseYear = today.getFullYear();
+  const selYear = parsed ? Number(parsed[1]) : baseYear;
+  const selMonth = parsed ? Number(parsed[2]) : today.getMonth() + 1;
+  const selDay = parsed ? Number(parsed[3]) : today.getDate();
+  const years = [baseYear - 1, baseYear, baseYear + 1];
+  if (!years.includes(selYear)) years.push(selYear);
+  years.sort((a, b) => a - b);
+  const yearOpts = years
+    .map((y) => `<option value="${y}"${y === selYear ? " selected" : ""}>${y}年</option>`)
+    .join("");
+  const monthOpts = Array.from({ length: 12 }, (_, i) => i + 1)
+    .map((m) => `<option value="${m}"${m === selMonth ? " selected" : ""}>${m}月</option>`)
+    .join("");
+  const maxDay = daysInMonth(selYear, selMonth);
+  const dayClamped = Math.min(selDay, maxDay);
+  const dayOpts = Array.from({ length: maxDay }, (_, i) => i + 1)
+    .map((d) => `<option value="${d}"${d === dayClamped ? " selected" : ""}>${d}日</option>`)
+    .join("");
+  const hiddenValue = `${selYear}-${pad2(selMonth)}-${pad2(dayClamped)}`;
+  return `
+    <div class="date-select-group">
+      <select class="date-select-year" data-date-part="year" aria-label="年" required aria-required="true">${yearOpts}</select>
+      <select class="date-select-month" data-date-part="month" aria-label="月" required aria-required="true">${monthOpts}</select>
+      <select class="date-select-day" data-date-part="day" aria-label="日" required aria-required="true">${dayOpts}</select>
+      <input type="hidden" name="visit_date" value="${escapeAttr(hiddenValue)}">
+    </div>
+  `;
+}
+
+function setupDateSelectGroup(form) {
+  const group = form.querySelector(".date-select-group");
+  if (!group) return;
+  const yearSel = group.querySelector('[data-date-part="year"]');
+  const monthSel = group.querySelector('[data-date-part="month"]');
+  const daySel = group.querySelector('[data-date-part="day"]');
+  const hidden = group.querySelector('input[name="visit_date"]');
+  if (!yearSel || !monthSel || !daySel || !hidden) return;
+
+  const sync = () => {
+    const y = Number(yearSel.value);
+    const m = Number(monthSel.value);
+    const maxDay = daysInMonth(y, m);
+    const prevDay = Number(daySel.value);
+    const currentOptionCount = daySel.options.length;
+    if (currentOptionCount !== maxDay) {
+      const newDay = Math.min(prevDay || 1, maxDay);
+      daySel.innerHTML = Array.from({ length: maxDay }, (_, i) => i + 1)
+        .map((d) => `<option value="${d}"${d === newDay ? " selected" : ""}>${d}日</option>`)
+        .join("");
+    }
+    const d = Number(daySel.value);
+    hidden.value = `${y}-${pad2(m)}-${pad2(d)}`;
+    hidden.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
+  yearSel.addEventListener("change", sync);
+  monthSel.addEventListener("change", sync);
+  daySel.addEventListener("change", sync);
+}
+
+function daysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
 }
 
 function timeOptions(selected, includeEnd) {

@@ -1337,6 +1337,28 @@ button {
   outline: 3px solid rgba(91, 197, 212, 0.25);
 }
 
+.date-select-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.date-select-group select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: var(--fg);
+  font: inherit;
+  padding: 9px 11px;
+}
+
+.date-select-group select:focus {
+  border-color: var(--primary);
+  outline: 3px solid rgba(91, 197, 212, 0.25);
+}
+
 .radio-row,
 .preset-row {
   display: flex;
