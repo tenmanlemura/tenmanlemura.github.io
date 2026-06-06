@@ -815,27 +815,11 @@ async function saveStore() {
   }
 }
 
-async function deleteStore() {
+function deleteStore() {
   if (isDegraded()) return;
   const existing = schedulesByDate.get(selectedDate);
   if (!existing?.id) return;
-  const target = `schedules/${existing.id}`;
-  const btn = byId("rdStDelete");
-  btn.disabled = true;
-  try {
-    await commitWrite({
-      op: "deleteSchedule",
-      domain: { collection: "schedules", docId: existing.id, action: "delete" },
-      inverse: { op: "create", target, data: stripId(existing) },
-      target, dispatchSource: "admin_schedule_delete",
-    });
-    closeSheets();
-    showToast("この日のお店設定を解除しました");
-  } catch (err) {
-    console.error("delete schedule failed", err);
-    putError("rdStError", jpError(err, "解除に失敗しました"));
-    btn.disabled = isDegraded();
-  }
+  requestDelete("schedule", existing);
 }
 
 /* ============ キャンセル（確認ダイアログ → ソフトデリート → トースト復活） ============ */
@@ -850,6 +834,12 @@ function requestDelete(kind, item) {
     titleNode.textContent = "この予約をキャンセルしますか？";
     sumNode.textContent = `${item.start_time}〜${end}　${item.customer_name || ""}　${item.course_code || ""}分`;
     okNode.textContent = "予約をキャンセルする";
+  } else if (kind === "schedule") {
+    const storeName = STORE_FULL[item.planned_store] || item.planned_store || "";
+    const eventNote = item.event_name ? `　${item.event_name}` : "";
+    titleNode.textContent = "この日のお店設定を解除しますか？";
+    sumNode.textContent = `${selectedDate}　${storeName}${eventNote}`;
+    okNode.textContent = "お店設定を解除する";
   } else {
     titleNode.textContent = "この受付停止を解除しますか？";
     sumNode.textContent = `${item.start_time}〜${item.end_time}　受付停止`;
@@ -883,6 +873,18 @@ async function confirmDelete() {
       closeConfirm();
       closeSheets();
       showToast("予約をキャンセルしました", true, 6000);
+    } else if (kind === "schedule") {
+      const target = `schedules/${item.id}`;
+      lastCancelled = null;
+      await commitWrite({
+        op: "deleteSchedule",
+        domain: { collection: "schedules", docId: item.id, action: "delete" },
+        inverse: { op: "create", target, data: stripId(item) },
+        target, dispatchSource: "admin_schedule_delete",
+      });
+      closeConfirm();
+      closeSheets();
+      showToast("この日のお店設定を解除しました");
     } else {
       const id = item.id;
       const target = `blocks/${id}`;
