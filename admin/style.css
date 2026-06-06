@@ -1891,8 +1891,8 @@ select.rd-select { appearance: none; -webkit-appearance: none; padding-right: 38
 
 /* ---- トースト ---- */
 .rd-toast-layer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; display: flex; justify-content: center; pointer-events: none; }
-.rd-toast { margin-bottom: 150px; max-width: 400px; width: calc(100% - 32px); background: #283A40; color: #fff; border-radius: 12px; padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 8px 24px rgba(30, 90, 104, .30); font-size: 14px; pointer-events: auto; opacity: 0; transform: translateY(12px); transition: opacity .2s ease, transform .2s ease; }
-.rd-toast.show { opacity: 1; transform: translateY(0); }
+.rd-toast { margin-bottom: 150px; max-width: 400px; width: calc(100% - 32px); background: #283A40; color: #fff; border-radius: 12px; padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 8px 24px rgba(30, 90, 104, .30); font-size: 14px; pointer-events: none; opacity: 0; transform: translateY(12px); transition: opacity .2s ease, transform .2s ease; }
+.rd-toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 .rd-toast .undo { color: var(--teal-light); font-weight: 700; background: none; border: none; cursor: pointer; font-size: 14px; white-space: nowrap; font-family: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
