@@ -876,10 +876,16 @@ async function confirmDelete() {
     } else if (kind === "schedule") {
       const target = `schedules/${item.id}`;
       lastCancelled = null;
+      const scheduleRestoreData = {
+        date: item.date, planned_store: item.planned_store || "",
+        event_name: item.event_name || "", event_venue: item.event_venue || "",
+        note: item.note || "", active: true,
+        created_at: item.created_at || serverTimestamp(), updated_at: serverTimestamp(),
+      };
       await commitWrite({
         op: "deleteSchedule",
         domain: { collection: "schedules", docId: item.id, action: "delete" },
-        inverse: { op: "create", target, data: stripId(item) },
+        inverse: { op: "create", target, data: scheduleRestoreData },
         target, dispatchSource: "admin_schedule_delete",
       });
       closeConfirm();
