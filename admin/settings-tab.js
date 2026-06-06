@@ -223,7 +223,7 @@ function buildCancelledItem(item) {
   li.className = "cancelled-item";
 
   const dateStr = formatVisitDate(item.visit_date);
-  const storeStr = item.store_code === "tazawara" ? "田主丸店" : item.store_code === "dazaifu" ? "太宰府店" : item.store_code || "";
+  const storeStr = item.store_code === "tanushimaru" ? "田主丸店" : item.store_code === "dazaifu" ? "太宰府店" : item.store_code || "";
   const nameStr = item.customer_name || "（名前なし）";
   const timeStr = item.start_time ? `${item.start_time}〜${item.end_time || ""}` : "";
 
