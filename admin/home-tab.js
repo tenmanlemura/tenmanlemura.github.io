@@ -889,10 +889,14 @@ async function confirmDelete() {
       const id = item.id;
       const target = `blocks/${id}`;
       lastCancelled = null;
+      const blockRestoreData = {
+        date: item.date, start_time: item.start_time, end_time: item.end_time,
+        active: true, created_at: item.created_at || serverTimestamp(), updated_at: serverTimestamp(),
+      };
       await commitWrite({
         op: "deleteBlock",
         domain: { collection: "blocks", docId: id, action: "delete" },
-        inverse: { op: "create", target, data: stripId(item) },
+        inverse: { op: "create", target, data: blockRestoreData },
         target, dispatchSource: "admin_block_delete",
       });
       closeConfirm();
