@@ -1,13 +1,17 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
+  connectAuthEmulator,
   getAuth,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
+import {
+  connectFirestoreEmulator,
+  getFirestore,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { firebaseConfig, useEmulator } from "./firebase-config.js";
 import { initDegradedListener } from "./degraded.js";
 import { initHomeTab } from "./home-tab.js";
 import { initSettingsTab } from "./settings-tab.js";
@@ -29,6 +33,10 @@ export function initFirebase() {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
+  if (useEmulator) {
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    connectFirestoreEmulator(db, "127.0.0.1", 8089);
+  }
 
   return { app, auth, db };
 }
