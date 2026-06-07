@@ -7,6 +7,7 @@ import {
   orderBy,
   limit,
   serverTimestamp,
+  deleteField,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { cancelReservation } from "./reservation-modal.js";
 import { commitWrite } from "./write-helpers.js";
@@ -314,12 +315,16 @@ function subscribeMonthData() {
   schedulesByDate = new Map();
   setMonthStatus("");
 
+  // active と invalid 両方を fetch。invalid は CalendarSyncService 経由で取り込まれた
+  // 「変な予約」（時刻欠落・店舗名不明・コース時間欠落 等）。admin SPA で警告表示して
+  // tenman さんが気付ける + 編集／削除できるようにする。
+  // visit_date 範囲外（invalid 時 visit_date="" もあり得る）に出る invalid 予約は別途取得。
   unsubscribeReservations = onSnapshot(
     query(
       collection(db, "reservations"),
       where("visit_date", ">=", range.start),
       where("visit_date", "<=", range.end),
-      where("status", "==", "active"),
+      where("status", "in", ["active", "invalid"]),
       orderBy("visit_date"),
       limit(500),
     ),
@@ -414,7 +419,8 @@ function renderCalendar() {
     const dow = (firstDow + d - 1) % 7;
     const reservations = reservationsForDate(key);
     const schedule = schedulesByDate.get(key);
-    const badge = resolveDayStore(schedule, reservations);
+    // 店舗バッジ判定は active 予約のみで決める（invalid は store_code が空文字の可能性があるので含めない）
+    const badge = resolveDayStore(schedule, activeReservationsForDate(key));
 
     const cell = document.createElement("button");
     cell.type = "button";
@@ -435,8 +441,10 @@ function renderCalendar() {
 
 function renderHub() {
   const reservations = reservationsForDate(selectedDate);
+  const activeOnly = activeReservationsForDate(selectedDate);
   const schedule = schedulesByDate.get(selectedDate);
-  const store = resolveDayStore(schedule, reservations);
+  // 店舗バッジ判定は active 予約のみで決める（invalid は store_code 不確定なので除外）
+  const store = resolveDayStore(schedule, activeOnly);
 
   const dateNode = byId("rdHubDate");
   if (dateNode) {
@@ -468,10 +476,12 @@ function renderHub() {
     else memo.hidden = true;
   }
 
-  // 件数
+  // 件数：active 数 + invalid 数を分けて表示（tenman さんが「要修正」と気付ける）
+  const invalidCount = reservations.length - activeOnly.length;
   const countLine = byId("rdCountLine");
   if (countLine) {
-    let text = `ご予約 ${reservations.length}件`;
+    let text = `ご予約 ${activeOnly.length}件`;
+    if (invalidCount > 0) text += ` ・ 要修正 ${invalidCount}件`;
     if (selectedBlocks.length) text += ` ・ 受付停止 ${selectedBlocks.length}件`;
     countLine.textContent = text;
   }
@@ -499,6 +509,8 @@ function renderHub() {
 }
 
 function bookingSlot(r) {
+  if (r.status === "invalid") return invalidSlot(r);
+
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "rd-slot";
@@ -510,6 +522,94 @@ function bookingSlot(r) {
     <span class="chev">${icon("chevRight", 20, 2)}</span>`;
   btn.addEventListener("click", () => openBookingSheet(r));
   return btn;
+}
+
+// CalendarSyncService が「変な予約」として取り込んだ invalid 状態の予約。
+// 何がおかしいか + どう直せばいいかを表示して、tap で編集シートに飛ぶ。
+function invalidSlot(r) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "rd-slot invalid";
+  const time = r.start_time
+    ? `${escapeText(r.start_time)}${r.end_time ? `<small>〜${escapeText(r.end_time)}</small>` : ""}`
+    : `<small>時刻未設定</small>`;
+  const name = r.customer_name && r.customer_name.length > 0
+    ? escapeText(r.customer_name)
+    : `<span class="rd-muted">名前未設定</span>`;
+  const errorBlocks = renderInvalidErrorMessages(r);
+  btn.innerHTML = `
+    <span class="rd-slot-invalid-warning">${icon("alertCircle", 16, 2)} 予約データの形式が不正です</span>
+    <span class="time">${time}</span>
+    <span class="body"><span class="name">${name}</span></span>
+    ${errorBlocks}
+    <span class="chev">${icon("chevRight", 20, 2)}</span>`;
+  btn.addEventListener("click", () => openBookingSheet(r));
+  return btn;
+}
+
+// validation_errors（JSON 文字列）を日本語で「何がおかしいか + どう直すか」に翻訳する。
+const INVALID_ERROR_MESSAGES = {
+  customer_name_missing: {
+    what: "お客さんの名前が入っていません",
+    how: "件名にお客さんのお名前を入れてください（例：山田 さくら）",
+  },
+  store_alias_unknown: {
+    what: "お店の名前がわかりません",
+    how: "場所欄に「田主丸」または「太宰府」と書いてください",
+  },
+  datetime_missing: {
+    what: "開始時刻・終了時刻が決まっていません",
+    how: "カレンダーで「終日」ではなく時刻を指定してください",
+  },
+  service_duration_missing: {
+    what: "コース時間（40 分／60 分）が書かれていません",
+    how: "件名か説明欄に「40 分」または「60 分」と書いてください",
+  },
+  outside_business_hours: {
+    what: "営業時間外（9:00〜21:00 の外）です",
+    how: "9:00〜21:00 の範囲で時刻を取り直してください",
+  },
+  daily_lock_violation: {
+    what: "同じ日に田主丸店と太宰府店の両方の予約はできません",
+    how: "1 日 1 店舗のルールです。日付かお店を変えてください",
+  },
+  blocked_time_conflict: {
+    what: "「予約不可」にした時間と重なっています",
+    how: "時間をずらすか、予約不可を解除してください",
+  },
+  reservation_conflict: {
+    what: "ほかのお客さまの予約と時間が重なっています",
+    how: "時間をずらしてください",
+  },
+  validation_error: {
+    what: "入力内容に問題があります",
+    how: "件名・場所・時刻・説明欄を確認してください",
+  },
+};
+
+function parseValidationErrors(r) {
+  const raw = r && r.validation_errors;
+  if (!raw) return [];
+  try {
+    const arr = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(arr)) return [];
+    // description_extra_content は警告レベルなので invalid 表示には含めない
+    return arr.filter((code) => code !== "description_extra_content");
+  } catch (_) {
+    return [];
+  }
+}
+
+function renderInvalidErrorMessages(r) {
+  const codes = parseValidationErrors(r);
+  if (codes.length === 0) {
+    return `<div class="rd-slot-invalid-errors"><div class="rd-invalid-error"><div class="what">入力内容に問題があります</div></div></div>`;
+  }
+  const blocks = codes.map((code) => {
+    const msg = INVALID_ERROR_MESSAGES[code] || INVALID_ERROR_MESSAGES.validation_error;
+    return `<div class="rd-invalid-error"><div class="what">${escapeText(msg.what)}</div><div class="how">→ ${escapeText(msg.how)}</div></div>`;
+  }).join("");
+  return `<div class="rd-slot-invalid-errors">${blocks}</div>`;
 }
 
 function blockSlot(b) {
@@ -636,9 +736,10 @@ async function saveBooking() {
   const memo = byId("rdBkMemo").value.trim();
 
   const editId = editingReservation?.reservation_id || editingReservation?.id || null;
+  // 時刻重複チェックは active 予約のみで行う（invalid は時刻が "" の可能性 + 修正中の予約自身が含まれている）
   const vmsg = validateBookingValues(
     { start, end, store, name },
-    { reservations: reservationsForDate(selectedDate), blocks: selectedBlocks, excludeId: editId },
+    { reservations: activeReservationsForDate(selectedDate), blocks: selectedBlocks, excludeId: editId },
   );
   if (vmsg) { putError("rdBkError", vmsg); return; }
 
@@ -648,21 +749,30 @@ async function saveBooking() {
     if (editingReservation) {
       const id = editId;
       const target = `reservations/${id}`;
+      // invalid な予約を編集して保存する場合は、validation 全項目を通っているので
+      // status を active に昇格 + validation_errors field を削除する。
+      // active を編集する場合は status を触らない（既存仕様維持）。
+      const wasInvalid = editingReservation.status === "invalid";
+      const data = {
+        visit_date: selectedDate, start_time: start, end_time: end,
+        store_code: store, course_code: course, customer_name: name,
+        customer_phone: tel, note: memo, updated_at: serverTimestamp(),
+      };
+      if (wasInvalid) {
+        data.status = "active";
+        data.validation_errors = deleteField();
+      }
       await commitWrite({
         op: "updateReservation",
         domain: {
           collection: "reservations", docId: id, action: "update",
-          data: {
-            visit_date: selectedDate, start_time: start, end_time: end,
-            store_code: store, course_code: course, customer_name: name,
-            customer_phone: tel, note: memo, updated_at: serverTimestamp(),
-          },
+          data,
         },
         inverse: { op: "update", target, data: stripId(editingReservation) },
         target, dispatchSource: "admin_reservation_update",
       });
       closeSheets();
-      showToast("予約を変更しました");
+      showToast(wasInvalid ? "予約データを修正しました" : "予約を変更しました");
     } else {
       const id = `rsv_${randomHex(12)}`;
       const target = `reservations/${id}`;
@@ -711,9 +821,10 @@ async function saveBlock() {
   const start = byId("rdBlkStart").value;
   const end = byId("rdBlkEnd").value;
   const editId = editingBlock?.id || null;
+  // block の時刻重複チェックは active 予約のみで行う（invalid は時刻が "" の可能性）
   const vmsg = validateBlockValues(
     { start, end },
-    { reservations: reservationsForDate(selectedDate), blocks: selectedBlocks, excludeId: editId },
+    { reservations: activeReservationsForDate(selectedDate), blocks: selectedBlocks, excludeId: editId },
   );
   if (vmsg) { putError("rdBlkError", vmsg); return; }
 
@@ -747,7 +858,9 @@ async function saveBlock() {
 let storeChoice = "";
 function openStoreSheet() {
   if (isDegraded()) return;
-  const reservations = reservationsForDate(selectedDate);
+  // store-lock 判定は active 予約のみで決める。invalid な予約は店舗未確定なので
+  // store の選択肢を縛るべきではない（修正後に正しい店舗が決まる）。
+  const reservations = activeReservationsForDate(selectedDate);
   const schedule = schedulesByDate.get(selectedDate);
   const hasBooking = reservations.length > 0;
   const current = resolveDayStore(schedule, reservations) || "";
@@ -837,10 +950,19 @@ function requestDelete(kind, item) {
   const sumNode = byId("rdCfSum");
   const okNode = byId("rdCfOk");
   if (kind === "booking") {
-    const end = item.end_time || addMinutes(item.start_time, COURSE_MIN[String(item.course_code)] || 0);
-    titleNode.textContent = "この予約をキャンセルしますか？";
-    sumNode.textContent = `${item.start_time}〜${end}　${item.customer_name || ""}　${item.course_code || ""}分`;
-    okNode.textContent = "予約をキャンセルする";
+    const isInvalid = item.status === "invalid";
+    if (isInvalid) {
+      // invalid 予約は status=cancelled に遷移すると Firestore rules の厳密検証で reject されるため
+      // 物理削除（doc 自体を delete）に変える。UI 文言も「キャンセル」ではなく「削除」に。
+      titleNode.textContent = "この予約データを削除しますか？";
+      sumNode.textContent = `${item.start_time || "(時刻なし)"}　${item.customer_name || "(名前なし)"}`;
+      okNode.textContent = "予約データを削除する";
+    } else {
+      const end = item.end_time || addMinutes(item.start_time, COURSE_MIN[String(item.course_code)] || 0);
+      titleNode.textContent = "この予約をキャンセルしますか？";
+      sumNode.textContent = `${item.start_time}〜${end}　${item.customer_name || ""}　${item.course_code || ""}分`;
+      okNode.textContent = "予約をキャンセルする";
+    }
   } else if (kind === "schedule") {
     const storeName = STORE_FULL[item.planned_store] || item.planned_store || "";
     const eventNote = item.event_name ? `　${item.event_name}` : "";
@@ -875,11 +997,29 @@ async function confirmDelete() {
   try {
     if (kind === "booking") {
       const id = item.reservation_id || item.id;
-      lastCancelled = { id, snapshot: { ...item } };
-      await cancelReservation(id);
-      closeConfirm();
-      closeSheets();
-      showToast("予約をキャンセルしました", true, 6000);
+      const isInvalid = item.status === "invalid";
+      if (isInvalid) {
+        // invalid 予約は物理削除（rules で invalid→cancelled の transition が弾かれるため）。
+        // undo の inverse は元 invalid 状態の全フィールド復元。
+        const target = `reservations/${id}`;
+        lastCancelled = null;
+        const restoreData = stripId(item);
+        await commitWrite({
+          op: "deleteInvalidReservation",
+          domain: { collection: "reservations", docId: id, action: "delete" },
+          inverse: { op: "create", target, data: restoreData },
+          target, dispatchSource: "admin_invalid_reservation_delete",
+        });
+        closeConfirm();
+        closeSheets();
+        showToast("予約データを削除しました");
+      } else {
+        lastCancelled = { id, snapshot: { ...item } };
+        await cancelReservation(id);
+        closeConfirm();
+        closeSheets();
+        showToast("予約をキャンセルしました", true, 6000);
+      }
     } else if (kind === "schedule") {
       const target = `schedules/${item.id}`;
       lastCancelled = null;
@@ -966,9 +1106,16 @@ function hideToast() {
 
 /* ============ ロジック ============ */
 function reservationsForDate(date) {
+  // active と invalid（calendar 経由で取り込まれた変な予約）の両方をリストに出す。
+  // 件数集計・物理制約 validation は status==="active" のみ別途フィルタする。
   return monthReservations
-    .filter((r) => r.visit_date === date && r.status === "active")
+    .filter((r) => r.visit_date === date && (r.status === "active" || r.status === "invalid"))
     .sort((a, b) => `${a.start_time || ""}${a.reservation_id || a.id || ""}`.localeCompare(`${b.start_time || ""}${b.reservation_id || b.id || ""}`));
+}
+
+// active のみ（件数集計・カレンダー dot 表示・物理制約 validation の入力に使う）。
+function activeReservationsForDate(date) {
+  return reservationsForDate(date).filter((r) => r.status === "active");
 }
 
 /* ---- 純粋関数（物理制約 validation / sort・テスト対象） ---- */
@@ -1027,7 +1174,8 @@ function resolveDayStore(schedule, reservations) {
 
 // 予約フォームの店舗ロック：その日に salon が決まっていれば返す（event は予約不可なので null=選択させない…ではなく salon のみロック）
 function resolveLockedStore(excludeReservation) {
-  const reservations = reservationsForDate(selectedDate).filter((r) => {
+  // store-lock 判定は active 予約のみで決める（invalid は store_code 不確定なので除外）
+  const reservations = activeReservationsForDate(selectedDate).filter((r) => {
     const id = r.reservation_id || r.id;
     const exId = excludeReservation?.reservation_id || excludeReservation?.id;
     return id !== exId;
@@ -1043,7 +1191,8 @@ function resolveLockedStore(excludeReservation) {
 }
 
 function findReservationCollision(start, end, excludeId) {
-  return reservationsForDate(selectedDate).find((r) => {
+  // 時刻衝突判定は active 予約のみ（invalid は時刻が "" の可能性）
+  return activeReservationsForDate(selectedDate).find((r) => {
     const id = r.reservation_id || r.id;
     if (excludeId && id === excludeId) return false;
     return timeOverlap(start, end, r.start_time, r.end_time);
@@ -1055,7 +1204,8 @@ function findBlockCollision(start, end) {
 }
 
 function nextFreeStart() {
-  const used = reservationsForDate(selectedDate).map((r) => strToMin(r.start_time));
+  // 既存予約の時刻空きを探す。active のみで判定（invalid は時刻が "" の可能性）
+  const used = activeReservationsForDate(selectedDate).map((r) => strToMin(r.start_time));
   for (let m = OPEN_MIN; m <= CLOSE_MIN - 60; m += 60) {
     if (!used.includes(m)) return minutesToStr(m);
   }
@@ -1129,6 +1279,7 @@ function icon(name, size = 20, sw = 2) {
     lock: '<rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>',
     check: '<polyline points="20 6 9 17 4 12"></polyline>',
     trash: '<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>',
+    alertCircle: '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>',
   };
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || ""}</svg>`;
 }
