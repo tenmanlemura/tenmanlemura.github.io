@@ -110,6 +110,10 @@ function buildHomeDom(root) {
           </button>
         </div>
       </div>
+      <div class="rd-hub-actions" aria-label="この日の操作">
+        <button type="button" class="rd-hub-action" id="rdHubAddBooking" data-write="true"><span class="ai add">${icon("plus", 16, 2.4)}</span>予約を追加</button>
+        <button type="button" class="rd-hub-action" id="rdHubAddBlock" data-write="true"><span class="ai block">${icon("noEntry", 16, 2.4)}</span>予約を受けない時間</button>
+      </div>
       <div class="rd-day-memo" id="rdDayMemo" hidden></div>
       <div class="rd-count-line" id="rdCountLine"></div>
       <div class="rd-schedule" id="rdSchedule"></div>
@@ -231,6 +235,9 @@ function wireStaticHandlers() {
   byId("rdFab")?.addEventListener("click", () => setFab(!fabOpen));
   byId("rdFabAddBooking")?.addEventListener("click", () => { setFab(false); openBookingSheet(null); });
   byId("rdFabAddBlock")?.addEventListener("click", () => { setFab(false); openBlockSheet(null); });
+  // tablet 用の常時アクションボタン（CSS で mobile では hidden）
+  byId("rdHubAddBooking")?.addEventListener("click", () => openBookingSheet(null));
+  byId("rdHubAddBlock")?.addEventListener("click", () => openBlockSheet(null));
   byId("rdStoreSelect")?.addEventListener("click", () => openStoreSheet());
 
   byId("rdScrim")?.addEventListener("click", closeSheets);

@@ -1898,3 +1898,194 @@ select.rd-select { appearance: none; -webkit-appearance: none; padding-right: 38
 @media (prefers-reduced-motion: reduce) {
   .rd-sheet, .rd-scrim, .rd-toast, .rd-dialog, .rd-fab svg, .rd-fab-menu { transition: none !important; }
 }
+
+/* =========================================================================
+   タブレット/PC 最適化（2026-06-07 追加）
+   - 0-767px: 現行スマホ UI（無改変）
+   - 768px+（高さ 600px+）: tablet 2 カラム + 右サイドパネル + 上タブバー
+   - 1024px+: PC 互換、max-width 1040px stop
+   - iPhone landscape（高さ < 600px）はスマホ UI を維持
+   ========================================================================= */
+
+/* tablet 用 hub 常時ボタン（mobile では非表示） */
+.rd-hub-actions { display: none; }
+
+@media (min-width: 768px) and (min-height: 600px) {
+  /* ---- shell ---- */
+  .admin-app {
+    max-width: 1040px;
+    padding-bottom: 0;
+    box-shadow: 0 0 60px rgba(30, 90, 104, .06);
+  }
+
+  .admin-header {
+    padding: 18px 20px;
+  }
+  .admin-header h1 { font-size: 19px; }
+  .admin-header .user-chip {
+    display: inline-block;
+    margin-left: auto;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--tint);
+    color: var(--fg-2);
+    font-size: 12px;
+  }
+
+  .admin-degraded-wrap { padding: 0 20px; }
+
+  .admin-main {
+    padding: 16px 20px;
+  }
+  .admin-main .tab-panel { padding: 0; }
+
+  /* ---- ホームタブを 2 カラム化 ---- */
+  #tab-home {
+    display: grid;
+    grid-template-columns: minmax(420px, 1.35fr) minmax(300px, .9fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  .rd-divider { display: none; }
+
+  /* ---- カレンダー（左カラム） ---- */
+  .rd-cal { min-width: 0; }
+  .rd-day { min-height: 60px; }
+  .rd-day .dnum { font-size: 14px; }
+
+  /* ---- 右カラム（hub）sticky ---- */
+  .rd-hub {
+    position: sticky;
+    top: 80px;
+    min-width: 0;
+  }
+  .rd-hub-date { font-size: 24px; }
+
+  /* tablet 常時アクションボタン */
+  .rd-hub-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .rd-hub-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--border, #e1e8eb);
+    border-radius: 22px;
+    background: var(--card, #fff);
+    color: var(--fg, #283A40);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .rd-hub-action .ai {
+    display: inline-flex;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    align-items: center; justify-content: center;
+  }
+  .rd-hub-action .ai.add { background: rgba(43, 177, 199, .14); color: var(--teal-dark); }
+  .rd-hub-action .ai.block { background: rgba(43, 177, 199, .08); color: var(--fg-2); }
+  .rd-hub-action:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+
+  /* mobile FAB を tablet で隠す */
+  .rd-fab-layer { display: none !important; }
+
+  /* 予約スロット余白 */
+  .rd-slot { padding: 14px 16px; }
+
+  /* ---- シート → 右サイドパネル ---- */
+  .rd-sheet {
+    left: auto;
+    right: 20px;
+    top: 80px;
+    bottom: 20px;
+    transform: translateX(calc(100% + 40px));
+    width: 440px;
+    max-width: 440px;
+    max-height: none;
+    border-radius: 18px;
+    transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+  }
+  .rd-sheet.show { transform: translateX(0); }
+  .rd-sheet-head::before { display: none; }
+  .rd-sheet-foot { padding-bottom: 16px; }
+
+  /* ---- タブバーを top sticky に ---- */
+  .admin-tabbar {
+    position: sticky;
+    top: 0;
+    bottom: auto;
+    left: 0;
+    transform: none;
+    max-width: 1040px;
+    margin: 0 auto;
+    width: 100%;
+    border-top: 0;
+    border-bottom: 1px solid var(--border, #e1e8eb);
+    box-shadow: 0 1px 0 rgba(0,0,0,.02);
+    padding-bottom: 0;
+    z-index: 25;
+    background: var(--card);
+  }
+  .admin-tab {
+    flex: 0 1 200px;
+    padding: 12px 0;
+    font-size: 12px;
+  }
+  .admin-tab svg { width: 22px; height: 22px; }
+
+  /* ---- 設定タブ ---- */
+  #panel-settings {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 8px 4px;
+  }
+  .settings-stack { gap: 24px; }
+
+  /* ---- トースト位置 ---- */
+  .rd-toast {
+    margin-bottom: 24px;
+    max-width: 440px;
+  }
+
+  /* ---- 確認ダイアログは中央維持（変更なし） ---- */
+}
+
+/* ---- PC（1024px+）追加調整 ---- */
+@media (min-width: 1024px) and (min-height: 600px) {
+  .admin-main { padding: 24px 28px; }
+  #tab-home { gap: 28px; }
+  .rd-day { min-height: 64px; }
+  .rd-day .dnum { font-size: 15px; }
+  .admin-header { padding: 20px 28px; }
+  .admin-header h1 { font-size: 20px; }
+}
+
+/* ---- hover / focus polish（pointer:fine 限定） ---- */
+@media (hover: hover) and (pointer: fine) {
+  .rd-day:hover { background: var(--tint); }
+  .rd-slot:hover { background: var(--tint); }
+  .rd-hub-action:hover {
+    background: var(--tint);
+    border-color: var(--teal-light);
+  }
+  .rd-btn:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+  .admin-tab:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: -2px;
+  }
+}
