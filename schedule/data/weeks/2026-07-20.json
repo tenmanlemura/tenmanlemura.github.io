@@ -175,8 +175,8 @@
     {
       "date": "2026-07-23",
       "day_status": "open",
-      "location_code": "tanushimaru",
-      "location_label": "田主丸店",
+      "location_code": null,
+      "location_label": null,
       "slots": [
         {
           "start": "10:00",
@@ -385,6 +385,6 @@
       ]
     }
   ],
-  "generated_at": "2026-06-07T17:20:48+09:00",
+  "generated_at": "2026-06-07T19:15:36+09:00",
   "source_version": "node-v1"
 }
