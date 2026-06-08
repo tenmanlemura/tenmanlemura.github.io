@@ -15,9 +15,9 @@
   "days": [
     {
       "date": "2026-06-15",
-      "day_status": "limited",
-      "location_code": "tanushimaru",
-      "location_label": "田主丸店",
+      "day_status": "open",
+      "location_code": null,
+      "location_label": null,
       "slots": [
         {
           "start": "10:00",
@@ -27,37 +27,37 @@
         {
           "start": "11:00",
           "end": "12:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "12:00",
           "end": "13:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "13:00",
           "end": "14:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "14:00",
           "end": "15:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "15:00",
           "end": "16:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "16:00",
           "end": "17:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "17:00",
           "end": "18:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "18:00",
@@ -121,24 +121,24 @@
     },
     {
       "date": "2026-06-17",
-      "day_status": "limited",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
+      "day_status": "open",
+      "location_code": null,
+      "location_label": null,
       "slots": [
         {
           "start": "10:00",
           "end": "11:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "11:00",
           "end": "12:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "12:00",
           "end": "13:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "13:00",
@@ -174,11 +174,56 @@
     },
     {
       "date": "2026-06-18",
-      "day_status": "event",
+      "day_status": "open",
       "location_code": null,
-      "event_name": "太宰府天満宮 朝市",
-      "event_venue": "",
-      "slots": []
+      "location_label": null,
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "11:00",
+          "status": "open"
+        },
+        {
+          "start": "11:00",
+          "end": "12:00",
+          "status": "open"
+        },
+        {
+          "start": "12:00",
+          "end": "13:00",
+          "status": "open"
+        },
+        {
+          "start": "13:00",
+          "end": "14:00",
+          "status": "open"
+        },
+        {
+          "start": "14:00",
+          "end": "15:00",
+          "status": "open"
+        },
+        {
+          "start": "15:00",
+          "end": "16:00",
+          "status": "open"
+        },
+        {
+          "start": "16:00",
+          "end": "17:00",
+          "status": "open"
+        },
+        {
+          "start": "17:00",
+          "end": "18:00",
+          "status": "open"
+        },
+        {
+          "start": "18:00",
+          "end": "19:00",
+          "status": "open"
+        }
+      ]
     },
     {
       "date": "2026-06-19",
@@ -235,19 +280,19 @@
     },
     {
       "date": "2026-06-20",
-      "day_status": "limited",
-      "location_code": "tanushimaru",
-      "location_label": "田主丸店",
+      "day_status": "open",
+      "location_code": null,
+      "location_label": null,
       "slots": [
         {
           "start": "10:00",
           "end": "11:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "11:00",
           "end": "12:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "12:00",
@@ -288,39 +333,39 @@
     },
     {
       "date": "2026-06-21",
-      "day_status": "limited",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
+      "day_status": "open",
+      "location_code": null,
+      "location_label": null,
       "slots": [
         {
           "start": "10:00",
           "end": "11:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "11:00",
           "end": "12:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "12:00",
           "end": "13:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "13:00",
           "end": "14:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "14:00",
           "end": "15:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "15:00",
           "end": "16:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "16:00",
@@ -340,6 +385,6 @@
       ]
     }
   ],
-  "generated_at": "2026-06-08T06:53:58+09:00",
+  "generated_at": "2026-06-08T23:51:57+09:00",
   "source_version": "node-v1"
 }
