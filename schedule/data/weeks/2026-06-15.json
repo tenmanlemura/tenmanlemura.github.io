@@ -148,7 +148,7 @@
         {
           "start": "14:00",
           "end": "15:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "15:00",
@@ -168,7 +168,7 @@
         {
           "start": "18:00",
           "end": "19:00",
-          "status": "blocked"
+          "status": "open"
         }
       ]
     },
@@ -385,6 +385,6 @@
       ]
     }
   ],
-  "generated_at": "2026-06-10T23:47:56+09:00",
+  "generated_at": "2026-06-10T23:52:55+09:00",
   "source_version": "node-v1"
 }
