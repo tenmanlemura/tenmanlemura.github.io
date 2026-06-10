@@ -227,7 +227,7 @@
     },
     {
       "date": "2026-06-19",
-      "day_status": "limited",
+      "day_status": "open",
       "location_code": null,
       "location_label": null,
       "slots": [
@@ -274,7 +274,7 @@
         {
           "start": "18:00",
           "end": "19:00",
-          "status": "blocked"
+          "status": "open"
         }
       ]
     },
@@ -385,6 +385,6 @@
       ]
     }
   ],
-  "generated_at": "2026-06-10T21:50:52+09:00",
+  "generated_at": "2026-06-10T22:20:58+09:00",
   "source_version": "node-v1"
 }
