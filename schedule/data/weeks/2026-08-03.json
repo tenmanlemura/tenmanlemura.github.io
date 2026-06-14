@@ -2,14 +2,14 @@
   "week_start": "2026-08-03",
   "courses": [
     {
-      "code": "40",
-      "duration_min": 40,
-      "price": 6000
-    },
-    {
       "code": "60",
       "duration_min": 60,
       "price": 9000
+    },
+    {
+      "code": "80",
+      "duration_min": 80,
+      "price": 12000
     }
   ],
   "days": [
@@ -52,16 +52,6 @@
         {
           "start": "16:00",
           "end": "17:00",
-          "status": "open"
-        },
-        {
-          "start": "17:00",
-          "end": "18:00",
-          "status": "open"
-        },
-        {
-          "start": "18:00",
-          "end": "19:00",
           "status": "open"
         }
       ]
@@ -106,16 +96,6 @@
           "start": "16:00",
           "end": "17:00",
           "status": "open"
-        },
-        {
-          "start": "17:00",
-          "end": "18:00",
-          "status": "open"
-        },
-        {
-          "start": "18:00",
-          "end": "19:00",
-          "status": "open"
         }
       ]
     },
@@ -158,16 +138,6 @@
         {
           "start": "16:00",
           "end": "17:00",
-          "status": "open"
-        },
-        {
-          "start": "17:00",
-          "end": "18:00",
-          "status": "open"
-        },
-        {
-          "start": "18:00",
-          "end": "19:00",
           "status": "open"
         }
       ]
@@ -212,16 +182,6 @@
           "start": "16:00",
           "end": "17:00",
           "status": "open"
-        },
-        {
-          "start": "17:00",
-          "end": "18:00",
-          "status": "open"
-        },
-        {
-          "start": "18:00",
-          "end": "19:00",
-          "status": "open"
         }
       ]
     },
@@ -264,16 +224,6 @@
         {
           "start": "16:00",
           "end": "17:00",
-          "status": "open"
-        },
-        {
-          "start": "17:00",
-          "end": "18:00",
-          "status": "open"
-        },
-        {
-          "start": "18:00",
-          "end": "19:00",
           "status": "open"
         }
       ]
@@ -318,16 +268,6 @@
           "start": "16:00",
           "end": "17:00",
           "status": "open"
-        },
-        {
-          "start": "17:00",
-          "end": "18:00",
-          "status": "open"
-        },
-        {
-          "start": "18:00",
-          "end": "19:00",
-          "status": "open"
         }
       ]
     },
@@ -371,20 +311,10 @@
           "start": "16:00",
           "end": "17:00",
           "status": "open"
-        },
-        {
-          "start": "17:00",
-          "end": "18:00",
-          "status": "open"
-        },
-        {
-          "start": "18:00",
-          "end": "19:00",
-          "status": "open"
         }
       ]
     }
   ],
-  "generated_at": "2026-06-14T06:54:20+09:00",
+  "generated_at": "2026-06-14T11:57:39+09:00",
   "source_version": "node-v1"
 }
