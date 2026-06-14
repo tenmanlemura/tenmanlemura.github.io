@@ -2050,9 +2050,9 @@ select.rd-select { appearance: none; -webkit-appearance: none; padding-right: 38
   .rd-sheet-head::before { display: none; }
   .rd-sheet-foot { padding-bottom: 16px; }
 
-  /* ---- タブバーは mobile と同じ下部固定（中央寄せ・PC では幅 720px） ---- */
+  /* ---- タブバーは mobile と同じ下部固定・PC では画面全幅 ---- */
   .admin-tabbar {
-    max-width: 720px;
+    max-width: none;
   }
   .admin-tab {
     flex: 0 1 200px;
