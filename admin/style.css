@@ -411,30 +411,13 @@ button {
     display: inline;
   }
 
-  .tabs {
-    position: sticky;
-    top: 0;
-    border-top: 0;
-    border-bottom: 1px solid var(--border);
-    box-shadow: none;
-  }
-
   .tab-row {
-    display: flex;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-6);
-  }
-
-  .tab-btn {
-    min-width: 124px;
-    min-height: 44px;
-    padding: 0 var(--space-4);
-    font-size: 13px;
+    max-width: 720px;
+    margin-inline: auto;
   }
 
   .main-content {
     padding-top: var(--space-8);
-    padding-bottom: var(--space-12);
   }
 
   .tab-placeholder {
