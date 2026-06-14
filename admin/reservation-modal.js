@@ -16,6 +16,7 @@ const STORE_OPTIONS = [
 const COURSE_OPTIONS = [
   ["40", "40分"],
   ["60", "60分"],
+  ["80", "80分"],
 ];
 const OPEN_MINUTES = 9 * 60;
 const CLOSE_MINUTES = 21 * 60;
@@ -375,7 +376,7 @@ async function validateReservation(values, currentId) {
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(values.visit_date)) return "日付の形式が不正です";
   if (!isValidTime(values.start_time) || !isValidTime(values.end_time)) return "時刻の形式が不正です";
-  if (!["40", "60"].includes(values.course_code)) return "コースを選択してください";
+  if (!COURSE_OPTIONS.some(([code]) => code === values.course_code)) return "コースを選択してください";
   if (!STORE_OPTIONS.some(([value]) => value === values.store_code)) return "店舗を選択してください";
 
   const start = timeToMinutes(values.start_time);

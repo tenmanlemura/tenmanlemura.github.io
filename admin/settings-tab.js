@@ -1,6 +1,8 @@
 import { signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   collection,
+  doc,
+  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -11,6 +13,7 @@ import { auth, db } from "./app.js";
 import { isDegraded } from "./degraded.js";
 import { executeRedo, executeUndo, getLatestRedoableLog, getLatestUndoableLog } from "./undo.js";
 import { commitWrite } from "./write-helpers.js";
+import { findRestoreConflicts } from "./schedule-guard.js";
 
 let initialized = false;
 
@@ -256,24 +259,32 @@ async function handleRestore(item, listItem) {
     return;
   }
 
-  // 同日に別店舗の active 予約がないか確認（1日1店舗制約）
+  // v1.1: 復活前に schedule / 別店舗 / 同店舗時間重複 / 受付停止を一括チェック
+  // （HIGH-3 + HIGH-NEW-1 / Codex review 2026-06-12・schedule-guard に集約）
   try {
-    const snap = await getDocs(
-      query(
+    const [scheduleSnap, resSnap, blockSnap] = await Promise.all([
+      getDoc(doc(db, "schedules", item.visit_date)),
+      getDocs(query(
         collection(db, "reservations"),
         where("status", "==", "active"),
         where("visit_date", "==", item.visit_date),
-      ),
-    );
-    const conflict = snap.docs.find(
-      (d) => d.data().store_code !== item.store_code,
-    );
-    if (conflict) {
-      alert(`${formatVisitDate(item.visit_date)} にはすでに別の店舗の予約があります。1日1店舗の制限により復活できません。`);
+      )),
+      getDocs(query(
+        collection(db, "blocks"),
+        where("active", "==", true),
+        where("date", "==", item.visit_date),
+      )),
+    ]);
+    const scheduleData = scheduleSnap.exists() ? (scheduleSnap.data() || {}) : null;
+    const otherActiveReservations = resSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const blocks = blockSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const verdict = findRestoreConflicts({ reservation: item, scheduleData, otherActiveReservations, blocks });
+    if (!verdict.ok) {
+      alert(`${formatVisitDate(item.visit_date)} ${verdict.message}`);
       return;
     }
   } catch (error) {
-    console.error("collision check failed", error);
+    console.error("restore conflict check failed", error);
     alert("確認中にエラーが発生しました。もう一度試してください。");
     return;
   }

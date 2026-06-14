@@ -1,6 +1,9 @@
 import { db } from "./app.js";
 import {
   collection,
+  doc,
+  getDoc,
+  getDocs,
   query,
   where,
   onSnapshot,
@@ -12,6 +15,7 @@ import {
 import { cancelReservation } from "./reservation-modal.js";
 import { commitWrite } from "./write-helpers.js";
 import { isDegraded } from "./degraded.js";
+import { findRestoreConflicts } from "./schedule-guard.js";  // v1.1 HIGH-3v2 / HIGH-NEW-1（復活検証を集約）
 
 /* =========================================================================
    home-tab.js — redesign-2026-06（task ベース）
@@ -20,12 +24,17 @@ import { isDegraded } from "./degraded.js";
    ========================================================================= */
 
 const WDAYS = ["日", "月", "火", "水", "木", "金", "土"];
-const STORE_FULL = { tanushimaru: "田主丸店", dazaifu: "太宰府店", event: "イベント出店" };
-const STORE_SHORT = { tanushimaru: "田主丸", dazaifu: "太宰府", event: "イベント" };
-const STORE_CSS = { tanushimaru: "tama", dazaifu: "daza", event: "event" };
-const COURSE_MIN = { "40": 40, "60": 60 };
-const OPEN_MIN = 9 * 60;
-const CLOSE_MIN = 21 * 60;
+// closed は「店休日」: 店舗ではなく planned_store 専用値（予約の store_code には使えない）
+const STORE_FULL = { tanushimaru: "田主丸店", dazaifu: "太宰府店", event: "イベント出店", closed: "店休" };
+const STORE_SHORT = { tanushimaru: "田主丸", dazaifu: "太宰府", event: "イベント", closed: "店休" };
+const STORE_CSS = { tanushimaru: "tama", dazaifu: "daza", event: "event", closed: "closed" };
+const COURSE_MIN = { "40": 40, "60": 60, "80": 80 };
+// v1.1: 営業時間は Firestore settings から動的に読み取る（HIGH-2 / Codex review 2026-06-12）。
+// default は 9:00-21:00（広めに）で、subscribeBusinessHours() が起動時に settings/store.*/hours_* を
+// 読んで OPEN_MIN / CLOSE_MIN を上書きする。両店舗の中で「最も早い start ～ 最も遅い end」を取る
+// （ある店舗 10-17 / 別店舗 9-19 でも両方で予約できるよう包括的に）。
+let OPEN_MIN = 9 * 60;
+let CLOSE_MIN = 21 * 60;
 const TIME_STEP = 10;
 
 let built = false;
@@ -38,6 +47,7 @@ let selectedBlocks = [];
 let selectedBlocksError = "";
 let unsubscribeReservations = null;
 let unsubscribeSchedules = null;
+let unsubscribeSettings = null;  // v1.1: 営業時間動的読み取り
 let unsubscribeSelectedBlocks = null;
 
 // シート編集状態
@@ -68,6 +78,7 @@ export function initHomeTab() {
   wireStaticHandlers();
   subscribeMonthData();
   subscribeSelectedBlocks(selectedDate);
+  subscribeBusinessHours();  // v1.1: 営業時間を Firestore settings から動的に読み取る
   renderHome();
 }
 
@@ -75,10 +86,49 @@ export function teardownHomeTab() {
   unsubscribeReservations?.();
   unsubscribeSchedules?.();
   unsubscribeSelectedBlocks?.();
+  unsubscribeSettings?.();
   unsubscribeReservations = null;
   unsubscribeSchedules = null;
   unsubscribeSelectedBlocks = null;
+  unsubscribeSettings = null;
   initialized = false;
+}
+
+// v1.1: settings collection を購読して OPEN_MIN / CLOSE_MIN を動的に更新する。
+// 両店舗の hours_start / hours_end から「予約可能な最広範囲」を計算（店舗が異なる日でも対応）。
+// settings doc は doc id = key の構造（例: settings/store.tanushimaru.hours_end）。
+function subscribeBusinessHours() {
+  unsubscribeSettings?.();
+  unsubscribeSettings = onSnapshot(collection(db, "settings"), (snap) => {
+    const values = {};
+    snap.forEach((doc) => {
+      const data = doc.data() || {};
+      const key = data.key || doc.id;
+      if (key && key !== "degraded_mode" && data.value !== undefined) {
+        values[String(key)] = String(data.value);
+      }
+    });
+    const next = computeBusinessHours(values);
+    if (next.openMin != null) OPEN_MIN = next.openMin;
+    if (next.closeMin != null) CLOSE_MIN = next.closeMin;
+    // 既に開いている時刻 pulldown は次回 open 時に反映される（時刻 select は openBookingSheet 内で再生成）
+  });
+}
+
+// settings の key-value map から「最広範囲の OPEN_MIN / CLOSE_MIN」を計算。
+// 両店舗の hours_start / hours_end の min / max を取る。値が無い側は null（既存値維持）。
+// pure function なのでテスト容易（HIGH-2 検証用）。
+function computeBusinessHours(values) {
+  const tanuStart = parseInt(values["store.tanushimaru.hours_start"], 10);
+  const tanuEnd = parseInt(values["store.tanushimaru.hours_end"], 10);
+  const dazaStart = parseInt(values["store.dazaifu.hours_start"], 10);
+  const dazaEnd = parseInt(values["store.dazaifu.hours_end"], 10);
+  const starts = [tanuStart, dazaStart].filter(Number.isFinite);
+  const ends = [tanuEnd, dazaEnd].filter(Number.isFinite);
+  return {
+    openMin: starts.length > 0 ? Math.min(...starts) * 60 : null,
+    closeMin: ends.length > 0 ? Math.max(...ends) * 60 : null,
+  };
 }
 
 /* ============ DOM 構築 ============ */
@@ -150,7 +200,7 @@ function buildOverlays() {
           <p class="rd-lock-note" style="margin-top:7px;">最初の予約で、この日のお店が決まります。</p>
         </div>
         <div class="rd-field"><label>開始時刻<span class="rd-req">必須</span></label><div class="rd-sel-wrap"><select class="rd-select" id="rdBkStart"></select>${icon("chevDown", 18, 2)}</div></div>
-        <div class="rd-field"><label>コース<span class="rd-req">必須</span></label><div class="rd-toggle" id="rdBkCourse"><button type="button" data-c="40">40分</button><button type="button" data-c="60">60分</button></div></div>
+        <div class="rd-field"><label>コース<span class="rd-req">必須</span></label><div class="rd-toggle" id="rdBkCourse"><button type="button" data-c="40">40分</button><button type="button" data-c="60">60分</button><button type="button" data-c="80">80分</button></div></div>
         <div class="rd-field"><div class="rd-end-note">${icon("clock", 16, 1.8)}終了時刻 <b id="rdBkEnd">--:--</b>（自動）</div></div>
         <div class="rd-field"><label>電話番号<span class="rd-opt">任意</span></label><input class="rd-input" id="rdBkTel" inputmode="tel" placeholder="例：090-1234-5678" autocomplete="off"></div>
         <div class="rd-field"><label>メモ<span class="rd-opt">任意</span></label><textarea class="rd-input" id="rdBkMemo" placeholder="お客さまについてのメモなど"></textarea></div>
@@ -190,6 +240,7 @@ function buildOverlays() {
           <button type="button" class="rd-store-opt" data-s="tanushimaru"><span class="od" style="background:var(--teal-dark)"></span><span><span class="ot">田主丸店</span></span><span class="ck">${icon("check", 20, 2.4)}</span></button>
           <button type="button" class="rd-store-opt" data-s="dazaifu"><span class="od" style="background:var(--teal-light)"></span><span><span class="ot">太宰府店</span></span><span class="ck">${icon("check", 20, 2.4)}</span></button>
           <button type="button" class="rd-store-opt" data-s="event"><span class="od" style="background:#E0A53C"></span><span><span class="ot">イベント出店</span><span class="os">外部の会場などで鑑定する日</span></span><span class="ck">${icon("check", 20, 2.4)}</span></button>
+          <button type="button" class="rd-store-opt" data-s="closed"><span class="od" style="background:#8A94A6"></span><span><span class="ot">店休</span><span class="os">お休みの日（公開ページは終日 × になります）</span></span><span class="ck">${icon("check", 20, 2.4)}</span></button>
         </div>
         <div class="rd-lock-note" id="rdStoreLockNote" hidden>${icon("lock", 14, 1.8)}<span>この日はすでに予約が入っているため、お店は変更できません。すべての予約を消すと変更できます。</span></div>
         <div id="rdEventFields" hidden style="margin-top:18px;">
@@ -655,6 +706,11 @@ function anySheetOpen() {
 
 /* ============ 予約シート ============ */
 function openBookingSheet(reservation) {
+  // 店休日は予約追加不可（編集は既存データ救済のため許可）
+  if (!reservation && schedulesByDate.get(selectedDate)?.planned_store === "closed") {
+    showToast("この日は店休です。予約を入れるには、先に「この日のお店」を変更してください");
+    return;
+  }
   editingReservation = reservation || null;
   const isEdit = !!reservation;
   byId("rdBkTitle").textContent = isEdit ? "予約を編集" : "予約を追加";
@@ -1068,13 +1124,32 @@ async function restoreLastCancelled() {
   if (!lastCancelled || isDegraded()) return;
   const { id, snapshot } = lastCancelled;
   lastCancelled = null;
-  // 復活前に衝突再チェック（キャンセル後に同枠へ別予約が入った可能性）
   const start = snapshot.start_time;
   const end = snapshot.end_time || addMinutes(start, COURSE_MIN[String(snapshot.course_code)] || 0);
-  const collision = findReservationCollision(start, end, id);
-  const blockCol = findBlockCollision(start, end);
-  if (collision || blockCol) {
-    showToast("この時間に別の予定が入ったため戻せませんでした");
+  // v1.1 HIGH-NEW-1: 衝突判定は selectedDate ではなく復活対象日（snapshot.visit_date）基準で行う。
+  // キャンセル後 6 秒以内に別日へ移動して Undo すると、selectedDate キャッシュは別日を指すため
+  // 元日の衝突を見逃す（Codex review 4 回目 HIGH-1）。全経路と同じく Firestore から読んで集約判定。
+  const visitDate = snapshot.visit_date;
+  try {
+    const [scheduleSnap, resSnap, blockSnap] = await Promise.all([
+      getDoc(doc(db, "schedules", visitDate)),
+      getDocs(query(collection(db, "reservations"), where("status", "==", "active"), where("visit_date", "==", visitDate))),
+      getDocs(query(collection(db, "blocks"), where("active", "==", true), where("date", "==", visitDate))),
+    ]);
+    const scheduleData = scheduleSnap.exists() ? (scheduleSnap.data() || {}) : null;
+    const otherActiveReservations = resSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const blocks = blockSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const verdict = findRestoreConflicts({
+      reservation: { ...snapshot, id, start_time: start, end_time: end },
+      scheduleData, otherActiveReservations, blocks,
+    });
+    if (!verdict.ok) {
+      showToast("この日は予定が変わったため戻せませんでした");
+      return;
+    }
+  } catch (err) {
+    console.error("restore conflict check failed", err);
+    showToast("確認中にエラーが発生したため戻せませんでした");
     return;
   }
   const target = `reservations/${id}`;
@@ -1133,7 +1208,7 @@ function validateBookingValues({ start, end, store, name }, { reservations = [],
   if (!name) return "お名前を入力してください";
   if (!store) return "お店を選んでください";
   if (!isValidTime(start) || !end) return "開始時刻が不正です";
-  if (strToMin(start) < OPEN_MIN || strToMin(end) > CLOSE_MIN) return "営業時間外です（09:00-21:00）";
+  if (strToMin(start) < OPEN_MIN || strToMin(end) > CLOSE_MIN) return `営業時間外です（${minutesToStr(OPEN_MIN)}-${minutesToStr(CLOSE_MIN)}）`;
   const r = reservations.find((x) => {
     const id = x.reservation_id || x.id;
     if (excludeId && id === excludeId) return false;
@@ -1149,7 +1224,7 @@ function validateBookingValues({ start, end, store, name }, { reservations = [],
 function validateBlockValues({ start, end }, { reservations = [], blocks = [], excludeId = null } = {}) {
   if (!isValidTime(start) || !isValidTime(end)) return "時刻が不正です";
   if (strToMin(end) <= strToMin(start)) return "終了時刻は開始時刻より後にしてください";
-  if (strToMin(start) < OPEN_MIN || strToMin(end) > CLOSE_MIN) return "営業時間内（9:00〜21:00）で指定してください";
+  if (strToMin(start) < OPEN_MIN || strToMin(end) > CLOSE_MIN) return `営業時間内（${minutesToStr(OPEN_MIN)}〜${minutesToStr(CLOSE_MIN)}）で指定してください`;
   const b = blocks.find((x) => {
     if (excludeId && x.id === excludeId) return false;
     return timeOverlap(start, end, x.start_time, x.end_time);
@@ -1160,10 +1235,10 @@ function validateBlockValues({ start, end }, { reservations = [], blocks = [], e
   return "";
 }
 
-// その日の店舗を決定：planned_store(salon/event) 優先、無ければ active 予約の店から（1店舗のみなら）
+// その日の店舗を決定：planned_store(salon/event/closed) 優先、無ければ active 予約の店から（1店舗のみなら）
 function resolveDayStore(schedule, reservations) {
   const planned = schedule?.planned_store;
-  if (planned === "tanushimaru" || planned === "dazaifu" || planned === "event") return planned;
+  if (planned === "tanushimaru" || planned === "dazaifu" || planned === "event" || planned === "closed") return planned;
   const codes = new Set();
   for (const r of reservations || []) {
     const s = r.store_code;

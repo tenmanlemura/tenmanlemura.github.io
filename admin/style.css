@@ -1689,6 +1689,7 @@ button {
   --tama-bg: rgba(43, 177, 199, .18); --tama-fg: #1E9AAF;
   --daza-bg: rgba(91, 197, 212, .18); --daza-fg: #167D91;
   --event-bg: #FFF0D8; --event-fg: #8B5200;
+  --closed-bg: rgba(138, 148, 166, .16); --closed-fg: #5A6470;
   --sh-card: 0 2px 10px rgba(30, 90, 104, .10);
   --sh-soft: 0 1px 4px rgba(30, 90, 104, .08);
   --sh-fab: 0 6px 18px rgba(30, 90, 104, .28);
@@ -1759,7 +1760,7 @@ button {
 .rd-day.muted .dnum { color: var(--fg-3); opacity: .5; }
 .rd-day .meta { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: var(--fg-2); font-variant-numeric: tabular-nums; }
 .rd-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
-.rd-dot.tama { background: var(--teal-dark); } .rd-dot.daza { background: var(--teal-light); } .rd-dot.event { background: #E0A53C; }
+.rd-dot.tama { background: var(--teal-dark); } .rd-dot.daza { background: var(--teal-light); } .rd-dot.event { background: #E0A53C; } .rd-dot.closed { background: #8A94A6; }
 .rd-day.sel { background: var(--tint); }
 .rd-day.sel .dnum { color: var(--teal-dark); font-weight: 700; }
 
@@ -1775,6 +1776,7 @@ button {
 .rd-store-select.tama { background: var(--tama-bg); color: var(--tama-fg); border-color: rgba(30, 154, 175, .30); }
 .rd-store-select.daza { background: var(--daza-bg); color: var(--daza-fg); border-color: rgba(22, 125, 145, .30); }
 .rd-store-select.event { background: var(--event-bg); color: var(--event-fg); border-color: rgba(139, 82, 0, .22); }
+.rd-store-select.closed { background: var(--closed-bg); color: var(--closed-fg); border-color: rgba(90, 100, 112, .25); }
 .rd-store-select.none { background: var(--tint); color: var(--fg-2); border-color: var(--border); }
 .rd-store-select .sdot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex: none; }
 .rd-store-select svg { width: 16px; height: 16px; opacity: .85; }

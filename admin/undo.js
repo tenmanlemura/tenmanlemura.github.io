@@ -10,6 +10,7 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { commitWrite, logSkipOnly } from "./write-helpers.js";
+import { findRestoreConflicts } from "./schedule-guard.js";
 
 const SKIP_ACTION = "undo_attempted_but_skipped";
 const CONFLICT_MESSAGE =
@@ -31,6 +32,12 @@ export async function executeUndo(logEntry) {
 
   const operation = normalizeOperation(entry.inverse_operation);
   const targetSnap = await getTargetSnapshot(operation);
+
+  // v1.1 HIGH-NEW-1: この undo が予約を active に復帰させる場合、復活前に物理制約を再確認する。
+  // 操作履歴 undo（cancel の inverse 等）はキャンセル後に店休/別店舗/同枠予約/受付停止が
+  // 入った状態でも素通りで active に戻していた（Codex review 3 回目）。
+  await assertReservationRestorable(operation, targetSnap);
+
   const precondition = checkPrecondition({ operation, logEntry: entry, targetSnap });
 
   if (!precondition.ok) {
@@ -62,6 +69,11 @@ export async function executeRedo() {
 
   const operation = normalizeOperation(entry.inverse_operation);
   const targetSnap = await getTargetSnapshot(operation);
+
+  // v1.1 HIGH-NEW-1: redo も active 予約を再作成しうる（予約作成の undo を redo すると create で復活）。
+  // executeUndo と同じ復活ガードを通す（Codex review 4 回目 HIGH-2）。
+  await assertReservationRestorable(operation, targetSnap);
+
   const undoOperation = buildInverseForAppliedOperation(operation, targetSnap);
   const revision = await commitWrite({
     op: `redo_of:${entry.id}`,
@@ -71,6 +83,46 @@ export async function executeRedo() {
   });
 
   return { status: "done", revision, logEntry: entry };
+}
+
+// v1.1 HIGH-NEW-1: undo が予約を「キャンセル等 → active」に戻す時だけ物理制約を再確認する。
+// 既に active な予約の編集 undo（名前変更の取り消し等）は対象外（status が変わらないため）。
+async function assertReservationRestorable(operation, targetSnap) {
+  const target = parseTarget(operation.target);
+  if (!target || target.collection !== "reservations") return;
+  if (operation.op === "delete") return; // 削除方向は active 復帰ではない
+
+  const base = targetSnap.exists() ? (targetSnap.data() || {}) : {};
+  const reservation = { ...base, ...(operation.data || {}) };
+  const willBeActive = reservation.status === "active";
+  const currentlyActive = targetSnap.exists() && base.status === "active";
+  if (!willBeActive || currentlyActive) return; // active への遷移でなければ検証不要
+
+  const visitDate = reservation.visit_date;
+  if (!visitDate) return; // 日付不明なら従来どおり（rules / GAS 側の最終防衛に委ねる）
+
+  const [scheduleSnap, resSnap, blockSnap] = await Promise.all([
+    getDoc(doc(db, "schedules", visitDate)),
+    getDocs(query(
+      collection(db, "reservations"),
+      where("status", "==", "active"),
+      where("visit_date", "==", visitDate),
+    )),
+    getDocs(query(
+      collection(db, "blocks"),
+      where("active", "==", true),
+      where("date", "==", visitDate),
+    )),
+  ]);
+  const scheduleData = scheduleSnap.exists() ? (scheduleSnap.data() || {}) : null;
+  const otherActiveReservations = resSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const blocks = blockSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  const verdict = findRestoreConflicts({ reservation: { ...reservation, id: target.docId }, scheduleData, otherActiveReservations, blocks });
+  if (!verdict.ok) {
+    // userFacingErrorMessage が日本語判定で拾えるよう日本語メッセージで throw
+    throw new Error(`この予約は復活できません（その日${verdict.message}）`);
+  }
 }
 
 async function getRecentActorLogs() {

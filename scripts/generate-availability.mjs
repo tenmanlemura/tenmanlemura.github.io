@@ -17,8 +17,13 @@ const SK = {
   SLOT_DURATION_MIN: "schedule.slot_duration_min",
   COURSE_40_DURATION: "course.40.duration_min",
   COURSE_40_PRICE: "course.40.price",
+  COURSE_40_PUBLIC: "course.40.public",
   COURSE_60_DURATION: "course.60.duration_min",
   COURSE_60_PRICE: "course.60.price",
+  COURSE_60_PUBLIC: "course.60.public",
+  COURSE_80_DURATION: "course.80.duration_min",
+  COURSE_80_PRICE: "course.80.price",
+  COURSE_80_PUBLIC: "course.80.public",
 };
 
 const SETTINGS_DEFAULTS = {
@@ -38,8 +43,13 @@ const SETTINGS_DEFAULTS = {
   "schedule.afternoon_start": "13:00",
   "course.40.duration_min": "40",
   "course.40.price": "6000",
+  "course.40.public": "true",
   "course.60.duration_min": "60",
   "course.60.price": "9000",
+  "course.60.public": "true",
+  "course.80.duration_min": "80",
+  "course.80.price": "12000",
+  "course.80.public": "true",
 };
 
 const STORE_LABEL = {
@@ -170,13 +180,24 @@ async function getWeek(db, mondayStr) {
 
   return {
     week_start: mondayStr,
-    courses: getCourses(settings),
+    courses: getCourses(settings)
+      .filter((c) => c.public)
+      .map((c) => ({ code: c.code, duration_min: c.duration_min, price: c.price })),
     days,
   };
 }
 
 function buildDay(dateStr, slotMin, schedule, blocks, reservations, settings) {
   const plannedStore = schedule ? schedule.planned_store : "both";
+  if (plannedStore === "closed") {
+    return {
+      date: dateStr,
+      day_status: "closed",
+      location_code: null,
+      location_label: null,
+      slots: [],
+    };
+  }
   if (plannedStore === "event") {
     return {
       date: dateStr,
@@ -400,17 +421,26 @@ function getStoreHours(settings, storeCode) {
   return null;
 }
 
+// public: false のコースは公開 JSON に出さない（管理画面では引き続き有効）
 function getCourses(settings) {
   return [
     {
       code: "40",
       duration_min: getSettingInt(settings, SK.COURSE_40_DURATION, 40),
       price: getSettingInt(settings, SK.COURSE_40_PRICE, 6000),
+      public: getSetting(settings, SK.COURSE_40_PUBLIC, "true") !== "false",
     },
     {
       code: "60",
       duration_min: getSettingInt(settings, SK.COURSE_60_DURATION, 60),
       price: getSettingInt(settings, SK.COURSE_60_PRICE, 9000),
+      public: getSetting(settings, SK.COURSE_60_PUBLIC, "true") !== "false",
+    },
+    {
+      code: "80",
+      duration_min: getSettingInt(settings, SK.COURSE_80_DURATION, 80),
+      price: getSettingInt(settings, SK.COURSE_80_PRICE, 12000),
+      public: getSetting(settings, SK.COURSE_80_PUBLIC, "true") !== "false",
     },
   ];
 }
