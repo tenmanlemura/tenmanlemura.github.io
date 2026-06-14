@@ -2050,22 +2050,9 @@ select.rd-select { appearance: none; -webkit-appearance: none; padding-right: 38
   .rd-sheet-head::before { display: none; }
   .rd-sheet-foot { padding-bottom: 16px; }
 
-  /* ---- タブバーを top sticky に ---- */
+  /* ---- タブバーは mobile と同じ下部固定（中央寄せ・PC では幅 720px） ---- */
   .admin-tabbar {
-    position: sticky;
-    top: 0;
-    bottom: auto;
-    left: 0;
-    transform: none;
-    max-width: 1040px;
-    margin: 0 auto;
-    width: 100%;
-    border-top: 0;
-    border-bottom: 1px solid var(--border, #e1e8eb);
-    box-shadow: 0 1px 0 rgba(0,0,0,.02);
-    padding-bottom: 0;
-    z-index: 25;
-    background: var(--card);
+    max-width: 720px;
   }
   .admin-tab {
     flex: 0 1 200px;
