@@ -1844,6 +1844,7 @@ button {
 .rd-fab-action:active { background: var(--tint); }
 .rd-fab-action .ai { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; }
 .rd-fab-action .ai.add { background: var(--teal); } .rd-fab-action .ai.block { background: var(--fg-3); }
+.rd-fab-action .ai.closed { background: #8A94A6; } .rd-fab-action .ai.event { background: #E0A53C; }
 
 /* ---- スクリム & シート ---- */
 .rd-scrim { position: fixed; inset: 0; z-index: 50; background: rgba(26, 40, 46, .42); opacity: 0; pointer-events: none; transition: opacity .24s ease; }
@@ -2022,6 +2023,8 @@ select.rd-select { appearance: none; -webkit-appearance: none; padding-right: 38
   }
   .rd-hub-action .ai.add { background: rgba(43, 177, 199, .14); color: var(--teal-dark); }
   .rd-hub-action .ai.block { background: rgba(43, 177, 199, .08); color: var(--fg-2); }
+  .rd-hub-action .ai.closed { background: rgba(138, 148, 166, .18); color: #6B7280; }
+  .rd-hub-action .ai.event { background: rgba(224, 165, 60, .18); color: #B8801F; }
   .rd-hub-action:focus-visible {
     outline: 2px solid var(--teal);
     outline-offset: 2px;

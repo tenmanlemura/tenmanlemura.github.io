@@ -15,7 +15,7 @@ import {
 import { cancelReservation } from "./reservation-modal.js";
 import { commitWrite } from "./write-helpers.js";
 import { isDegraded } from "./degraded.js";
-import { findRestoreConflicts } from "./schedule-guard.js";  // v1.1 HIGH-3v2 / HIGH-NEW-1（復活検証を集約）
+import { findRestoreConflicts, checkScheduleChangeConflict, checkScheduleDeleteConflict } from "./schedule-guard.js";  // v1.1 復活検証集約 + INC-2026-034 schedule 変更/削除検証
 
 /* =========================================================================
    home-tab.js — redesign-2026-06（task ベース）
@@ -164,6 +164,8 @@ function buildHomeDom(root) {
       <div class="rd-hub-actions" aria-label="この日の操作">
         <button type="button" class="rd-hub-action" id="rdHubAddBooking" data-write="true"><span class="ai add">${icon("plus", 16, 2.4)}</span>予約を追加</button>
         <button type="button" class="rd-hub-action" id="rdHubAddBlock" data-write="true"><span class="ai block">${icon("noEntry", 16, 2.4)}</span>予約を受けない時間</button>
+        <button type="button" class="rd-hub-action" id="rdHubSetClosed" data-write="true"><span class="ai closed">${icon("moon", 16, 2.4)}</span>店休にする</button>
+        <button type="button" class="rd-hub-action" id="rdHubSetEvent" data-write="true"><span class="ai event">${icon("star", 16, 2.4)}</span>イベント設定</button>
       </div>
       <div class="rd-day-memo" id="rdDayMemo" hidden></div>
       <div class="rd-count-line" id="rdCountLine"></div>
@@ -182,6 +184,8 @@ function buildOverlays() {
         <div class="rd-fab-menu" id="rdFabMenu">
           <button type="button" class="rd-fab-action" id="rdFabAddBooking" data-write="true"><span class="ai add">${icon("plus", 17, 2.4)}</span>予約を追加</button>
           <button type="button" class="rd-fab-action" id="rdFabAddBlock" data-write="true"><span class="ai block">${icon("noEntry", 17, 2.4)}</span>予約を受けない時間</button>
+          <button type="button" class="rd-fab-action" id="rdFabSetClosed" data-write="true"><span class="ai closed">${icon("moon", 17, 2.4)}</span>店休にする</button>
+          <button type="button" class="rd-fab-action" id="rdFabSetEvent" data-write="true"><span class="ai event">${icon("star", 17, 2.4)}</span>イベント設定</button>
         </div>
         <button type="button" class="rd-fab" id="rdFab" data-write="true" aria-label="追加">${icon("plus", 28, 2.4)}</button>
       </div>
@@ -287,9 +291,13 @@ function wireStaticHandlers() {
   byId("rdFab")?.addEventListener("click", () => setFab(!fabOpen));
   byId("rdFabAddBooking")?.addEventListener("click", () => { setFab(false); openBookingSheet(null); });
   byId("rdFabAddBlock")?.addEventListener("click", () => { setFab(false); openBlockSheet(null); });
+  byId("rdFabSetClosed")?.addEventListener("click", () => { setFab(false); openStoreSheet("closed"); });
+  byId("rdFabSetEvent")?.addEventListener("click", () => { setFab(false); openStoreSheet("event"); });
   // tablet 用の常時アクションボタン（CSS で mobile では hidden）
   byId("rdHubAddBooking")?.addEventListener("click", () => openBookingSheet(null));
   byId("rdHubAddBlock")?.addEventListener("click", () => openBlockSheet(null));
+  byId("rdHubSetClosed")?.addEventListener("click", () => openStoreSheet("closed"));
+  byId("rdHubSetEvent")?.addEventListener("click", () => openStoreSheet("event"));
   byId("rdStoreSelect")?.addEventListener("click", () => openStoreSheet());
 
   byId("rdScrim")?.addEventListener("click", closeSheets);
@@ -912,7 +920,7 @@ async function saveBlock() {
 
 /* ============ お店設定シート ============ */
 let storeChoice = "";
-function openStoreSheet() {
+function openStoreSheet(preSelected) {
   if (isDegraded()) return;
   // store-lock 判定は active 予約のみで決める。invalid な予約は店舗未確定なので
   // store の選択肢を縛るべきではない（修正後に正しい店舗が決まる）。
@@ -920,14 +928,22 @@ function openStoreSheet() {
   const schedule = schedulesByDate.get(selectedDate);
   const hasBooking = reservations.length > 0;
   const current = resolveDayStore(schedule, reservations) || "";
-  storeChoice = current;
+
+  // INC-2026-034: preSelected が指定されても、active 予約ありの日は current 以外に効かせない
+  // （schedule-guard.js の checkScheduleChangeConflict と同じ防壁・single source of truth）
+  let effective = current;
+  if (preSelected) {
+    const check = checkScheduleChangeConflict({ newStore: preSelected, currentStore: current, hasActiveReservations: hasBooking });
+    effective = check.ok ? preSelected : current;
+  }
+  storeChoice = effective;
 
   byId("rdStoreOpts").querySelectorAll("button[data-s]").forEach((b) => {
-    b.classList.toggle("on", b.dataset.s === current);
+    b.classList.toggle("on", b.dataset.s === effective);
     b.disabled = hasBooking && b.dataset.s !== current;
   });
   byId("rdStoreLockNote").hidden = !hasBooking;
-  toggleEventFields(current === "event");
+  toggleEventFields(effective === "event");
   byId("rdEvName").value = schedule?.event_name || "";
   byId("rdEvVenue").value = schedule?.event_venue || "";
   byId("rdStMemo").value = schedule?.note || "";
@@ -936,6 +952,11 @@ function openStoreSheet() {
   byId("rdStSave").disabled = isDegraded();
   putError("rdStError", "");
   openSheet("rdSheetStore");
+
+  // INC-2026-034: lock 時に preSelected が無視された場合はトーストで理由を案内
+  if (preSelected && hasBooking && preSelected !== current) {
+    showToast("この日は予約があるため、お店の設定を変更できません");
+  }
 }
 
 function pickStore(s) {
@@ -952,6 +973,16 @@ async function saveStore() {
   if (isDegraded()) return;
   putError("rdStError", "");
   if (!storeChoice) { putError("rdStError", "お店を選んでください"); return; }
+
+  // INC-2026-034: active 予約ありの日は planned_store を current 以外へ変更不可。
+  // UI 側の option disabled だけでは API 直叩き / state 不整合 / pre-select bypass で
+  // 物理制約（1 日 1 店舗）を破るリスクがあるため、commitWrite 直前にも再検査する。
+  const reservationsNow = activeReservationsForDate(selectedDate);
+  const hasBookingNow = reservationsNow.length > 0;
+  const currentStoreNow = resolveDayStore(schedulesByDate.get(selectedDate), reservationsNow) || "";
+  const guard = checkScheduleChangeConflict({ newStore: storeChoice, currentStore: currentStoreNow, hasActiveReservations: hasBookingNow });
+  if (!guard.ok) { putError("rdStError", guard.message); return; }
+
   const eventName = byId("rdEvName").value.trim();
   const eventVenue = byId("rdEvVenue").value.trim();
   const memo = byId("rdStMemo").value.trim();
@@ -993,6 +1024,14 @@ async function saveStore() {
 
 function deleteStore() {
   if (isDegraded()) return;
+  // INC-2026-034 Codex final review NG-1: manual.html C-5 と実装の整合性のため
+  // active 予約ありの日は schedule 解除を拒否する（変更系の防壁と同型）。
+  const hasBooking = activeReservationsForDate(selectedDate).length > 0;
+  const guard = checkScheduleDeleteConflict({ hasActiveReservations: hasBooking });
+  if (!guard.ok) {
+    showToast(guard.message);
+    return;
+  }
   const existing = schedulesByDate.get(selectedDate);
   if (!existing?.id) return;
   requestDelete("schedule", existing);
@@ -1355,6 +1394,8 @@ function icon(name, size = 20, sw = 2) {
     check: '<polyline points="20 6 9 17 4 12"></polyline>',
     trash: '<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>',
     alertCircle: '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>',
+    moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>',
+    star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>',
   };
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || ""}</svg>`;
 }

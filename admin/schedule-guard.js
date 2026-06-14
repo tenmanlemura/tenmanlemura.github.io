@@ -79,3 +79,32 @@ export function findRestoreConflicts({ reservation, scheduleData, otherActiveRes
 
   return { ok: true };
 }
+
+// 営業予定（planned_store）の変更時の検証。
+// active 予約が入っている日は、planned_store を現在値（current）以外へ変更不可。
+// UI 側の選択肢 disabled だけでは API 呼び出し / 別経路 / state 不整合で bypass されうるため、
+// 保存直前にも本関数を通して防壁とする（single source of truth）。
+//
+// 引数:
+//   newStore: 変更先（"tanushimaru" | "dazaifu" | "event" | "closed" | ""）
+//   currentStore: 現在値（resolveDayStore の解決値・null 可）
+//   hasActiveReservations: 同日に active 予約が 1 件以上あるか
+// 返り値: { ok: true } または { ok: false, message: "<日本語>" }
+export function checkScheduleChangeConflict({ newStore, currentStore, hasActiveReservations }) {
+  if (!hasActiveReservations) return { ok: true };
+  if (!newStore) return { ok: true };
+  if (newStore === currentStore) return { ok: true };
+  return { ok: false, message: "この日は予約があるため、お店の設定を変更できません。先に予約をキャンセルすると変更できるようになります。" };
+}
+
+// 営業予定（schedule）の削除（解除）時の検証。
+// active 予約が入っている日は schedule 削除を拒否する。
+// INC-2026-034 Codex final review NG-1: deleteStore() に active 予約チェックがなく
+// manual.html C-5「予約がある日は解除できない」と乖離していた問題の修正（実装側を一致させる方針）。
+// 引数:
+//   hasActiveReservations: 同日に active 予約が 1 件以上あるか
+// 返り値: { ok: true } または { ok: false, message: "<日本語>" }
+export function checkScheduleDeleteConflict({ hasActiveReservations }) {
+  if (!hasActiveReservations) return { ok: true };
+  return { ok: false, message: "この日は予約があるため、お店の設定を解除できません。先に予約をキャンセルすると解除できるようになります。" };
+}
