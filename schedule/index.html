@@ -51,7 +51,8 @@ body{background:var(--bg);color:var(--fg1);font-family:var(--sans);font-size:16p
 
 /* Week nav */
 .week-nav{padding:4px 0 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.week-nav .label{flex:1;text-align:center;font-family:var(--serif);font-size:17px;color:var(--teal2);font-weight:500;letter-spacing:0.04em}
+.week-nav .label{flex:1;text-align:center;font-family:var(--serif);font-size:17px;color:var(--teal2);font-weight:500;letter-spacing:0.04em;line-height:1.35}
+.week-nav .label .wk-year{display:block;font-size:13px;font-weight:500;letter-spacing:0.02em;opacity:.85}
 .nav-btn{flex-shrink:0;background:transparent;border:none;color:var(--teal2);padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .nav-btn:disabled{color:var(--fg3);cursor:not-allowed}
 .today-btn{flex-shrink:0;background:var(--teal-bg);border:1px solid var(--teal-lt);color:var(--teal2);padding:5px 12px;border-radius:999px;font-size:11px;font-weight:500;cursor:pointer}
@@ -173,7 +174,7 @@ const WDAYS = ["日","月","火","水","木","金","土"];
 // ── ユーティリティ ─────────────────────────────────
 function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
 function weekMonday(d){const r=new Date(d);const day=r.getDay();r.setDate(r.getDate()-(day===0?6:day-1));r.setHours(0,0,0,0);return r;}
-function fmtWeek(mon){const sun=new Date(mon);sun.setDate(sun.getDate()+6);const y=mon.getFullYear();const m1=mon.getMonth()+1,d1=mon.getDate();const m2=sun.getMonth()+1,d2=sun.getDate();return m1===m2?`${y}年${m1}月${d1}日〜${d2}日`:`${y}年${m1}月${d1}日〜${m2}月${d2}日`;}
+function fmtWeek(mon){const sun=new Date(mon);sun.setDate(sun.getDate()+6);const y=mon.getFullYear();const m1=mon.getMonth()+1,d1=mon.getDate();const m2=sun.getMonth()+1,d2=sun.getDate();const range=m1===m2?`${m1}月${d1}日〜${d2}日`:`${m1}月${d1}日〜${m2}月${d2}日`;return `<span class="wk-year">${y}年</span>${range}`;}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 
 // ── 空き状況取得（3 段 fallback） ───────────────────
@@ -296,7 +297,7 @@ function buildTimeAxis(days) {
 
 function render() {
   const todayKey = dateKey(new Date());
-  document.getElementById("weekLabel").textContent = fmtWeek(weekStart);
+  document.getElementById("weekLabel").innerHTML = fmtWeek(weekStart);
 
   const days = [];
   for (let i = 0; i < 7; i++) {
