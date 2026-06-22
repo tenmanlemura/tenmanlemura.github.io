@@ -1,5 +1,5 @@
 {
-  "week_start": "2026-06-29",
+  "week_start": "2026-08-17",
   "courses": [
     {
       "code": "60",
@@ -14,51 +14,8 @@
   ],
   "days": [
     {
-      "date": "2026-06-29",
-      "day_status": "full",
-      "location_code": "tanushimaru",
-      "location_label": "田主丸店",
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "11:00",
-          "status": "blocked"
-        },
-        {
-          "start": "11:00",
-          "end": "12:00",
-          "status": "blocked"
-        },
-        {
-          "start": "12:00",
-          "end": "13:00",
-          "status": "blocked"
-        },
-        {
-          "start": "13:00",
-          "end": "14:00",
-          "status": "blocked"
-        },
-        {
-          "start": "14:00",
-          "end": "15:00",
-          "status": "blocked"
-        },
-        {
-          "start": "15:00",
-          "end": "16:00",
-          "status": "blocked"
-        },
-        {
-          "start": "16:00",
-          "end": "17:00",
-          "status": "blocked"
-        }
-      ]
-    },
-    {
-      "date": "2026-06-30",
-      "day_status": "limited",
+      "date": "2026-08-17",
+      "day_status": "open",
       "location_code": "tanushimaru",
       "location_label": "田主丸店",
       "slots": [
@@ -70,50 +27,7 @@
         {
           "start": "11:00",
           "end": "12:00",
-          "status": "blocked"
-        },
-        {
-          "start": "12:00",
-          "end": "13:00",
-          "status": "blocked"
-        },
-        {
-          "start": "13:00",
-          "end": "14:00",
-          "status": "blocked"
-        },
-        {
-          "start": "14:00",
-          "end": "15:00",
-          "status": "blocked"
-        },
-        {
-          "start": "15:00",
-          "end": "16:00",
-          "status": "blocked"
-        },
-        {
-          "start": "16:00",
-          "end": "17:00",
-          "status": "blocked"
-        }
-      ]
-    },
-    {
-      "date": "2026-07-01",
-      "day_status": "limited",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "11:00",
-          "status": "blocked"
-        },
-        {
-          "start": "11:00",
-          "end": "12:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "12:00",
@@ -123,103 +37,17 @@
         {
           "start": "13:00",
           "end": "14:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "14:00",
           "end": "15:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "15:00",
           "end": "16:00",
-          "status": "blocked"
-        },
-        {
-          "start": "16:00",
-          "end": "17:00",
-          "status": "blocked"
-        }
-      ]
-    },
-    {
-      "date": "2026-07-02",
-      "day_status": "full",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "11:00",
-          "status": "blocked"
-        },
-        {
-          "start": "11:00",
-          "end": "12:00",
-          "status": "blocked"
-        },
-        {
-          "start": "12:00",
-          "end": "13:00",
-          "status": "blocked"
-        },
-        {
-          "start": "13:00",
-          "end": "14:00",
-          "status": "blocked"
-        },
-        {
-          "start": "14:00",
-          "end": "15:00",
-          "status": "blocked"
-        },
-        {
-          "start": "15:00",
-          "end": "16:00",
-          "status": "blocked"
-        },
-        {
-          "start": "16:00",
-          "end": "17:00",
-          "status": "blocked"
-        }
-      ]
-    },
-    {
-      "date": "2026-07-03",
-      "day_status": "limited",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "11:00",
-          "status": "blocked"
-        },
-        {
-          "start": "11:00",
-          "end": "12:00",
-          "status": "blocked"
-        },
-        {
-          "start": "12:00",
-          "end": "13:00",
-          "status": "blocked"
-        },
-        {
-          "start": "13:00",
-          "end": "14:00",
-          "status": "blocked"
-        },
-        {
-          "start": "14:00",
-          "end": "15:00",
-          "status": "blocked"
-        },
-        {
-          "start": "15:00",
-          "end": "16:00",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "16:00",
@@ -229,7 +57,7 @@
       ]
     },
     {
-      "date": "2026-07-04",
+      "date": "2026-08-18",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -272,7 +100,179 @@
       ]
     },
     {
-      "date": "2026-07-05",
+      "date": "2026-08-19",
+      "day_status": "open",
+      "location_code": null,
+      "location_label": null,
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "11:00",
+          "status": "open"
+        },
+        {
+          "start": "11:00",
+          "end": "12:00",
+          "status": "open"
+        },
+        {
+          "start": "12:00",
+          "end": "13:00",
+          "status": "open"
+        },
+        {
+          "start": "13:00",
+          "end": "14:00",
+          "status": "open"
+        },
+        {
+          "start": "14:00",
+          "end": "15:00",
+          "status": "open"
+        },
+        {
+          "start": "15:00",
+          "end": "16:00",
+          "status": "open"
+        },
+        {
+          "start": "16:00",
+          "end": "17:00",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "date": "2026-08-20",
+      "day_status": "full",
+      "location_code": "tanushimaru",
+      "location_label": "田主丸店",
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "11:00",
+          "status": "blocked"
+        },
+        {
+          "start": "11:00",
+          "end": "12:00",
+          "status": "blocked"
+        },
+        {
+          "start": "12:00",
+          "end": "13:00",
+          "status": "blocked"
+        },
+        {
+          "start": "13:00",
+          "end": "14:00",
+          "status": "blocked"
+        },
+        {
+          "start": "14:00",
+          "end": "15:00",
+          "status": "blocked"
+        },
+        {
+          "start": "15:00",
+          "end": "16:00",
+          "status": "blocked"
+        },
+        {
+          "start": "16:00",
+          "end": "17:00",
+          "status": "blocked"
+        }
+      ]
+    },
+    {
+      "date": "2026-08-21",
+      "day_status": "open",
+      "location_code": null,
+      "location_label": null,
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "11:00",
+          "status": "open"
+        },
+        {
+          "start": "11:00",
+          "end": "12:00",
+          "status": "open"
+        },
+        {
+          "start": "12:00",
+          "end": "13:00",
+          "status": "open"
+        },
+        {
+          "start": "13:00",
+          "end": "14:00",
+          "status": "open"
+        },
+        {
+          "start": "14:00",
+          "end": "15:00",
+          "status": "open"
+        },
+        {
+          "start": "15:00",
+          "end": "16:00",
+          "status": "open"
+        },
+        {
+          "start": "16:00",
+          "end": "17:00",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "date": "2026-08-22",
+      "day_status": "open",
+      "location_code": null,
+      "location_label": null,
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "11:00",
+          "status": "open"
+        },
+        {
+          "start": "11:00",
+          "end": "12:00",
+          "status": "open"
+        },
+        {
+          "start": "12:00",
+          "end": "13:00",
+          "status": "open"
+        },
+        {
+          "start": "13:00",
+          "end": "14:00",
+          "status": "open"
+        },
+        {
+          "start": "14:00",
+          "end": "15:00",
+          "status": "open"
+        },
+        {
+          "start": "15:00",
+          "end": "16:00",
+          "status": "open"
+        },
+        {
+          "start": "16:00",
+          "end": "17:00",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "date": "2026-08-23",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
