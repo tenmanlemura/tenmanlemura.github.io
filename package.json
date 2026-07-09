@@ -6,9 +6,6 @@
   "engines": {
     "node": ">=20"
   },
-  "dependencies": {
-    "firebase-admin": "^12.7.0"
-  },
   "scripts": {
     "generate": "node scripts/generate-availability.mjs"
   }

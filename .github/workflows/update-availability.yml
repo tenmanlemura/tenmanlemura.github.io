@@ -2,14 +2,12 @@ name: Update availability JSON
 
 on:
   schedule:
-    # 6 時間毎の補強更新（repository_dispatch 失敗時のセーフティネット・Firestore reads 削減）
-    # 即時反映は dispatch パイプライン（GAS → repository_dispatch）が担当。Watchdog 1 分 cron がリカバリ。
-    # cron は dispatch が完全停止した時の最終保険として残置。
+    # 6 時間毎の補強更新。dispatch 失敗時のセーフティネット。
     - cron: '0 */6 * * *'
   repository_dispatch:
-    # update-availability: 旧 ApiHandlers.gs triggerGitHubPagesUpdate（client_payload.revision なし・M1 移行中残置）
-    # firestore-update:    旧 DispatchEndpoint.gs / admin fireDispatch（client_payload.revision あり・publish 完了通知発火）
-    # build-availability:  新 Watchdog（案 X build_state）（client_payload.build_target_edited_at あり・revision なし）
+    # update-availability: 旧 ApiHandlers.gs triggerGitHubPagesUpdate
+    # firestore-update:    旧 DispatchEndpoint.gs（現在は GAS 側 disable・発火しない）
+    # build-availability:  新 Watchdog（案 X build_state）（GAS 側 disable・発火しない）
     types: [update-availability, firestore-update, build-availability]
   workflow_dispatch:
 
@@ -20,11 +18,6 @@ concurrency:
   group: update-availability
   cancel-in-progress: false
 
-env:
-  # repository_dispatch (firestore-update) から渡される publish revision。
-  # cron / workflow_dispatch / repository_dispatch[update-availability] 経由では空文字列。
-  PUBLISH_REVISION: ${{ github.event.client_payload.revision }}
-
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -33,29 +26,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate revision (firestore-update only)
-        if: github.event_name == 'repository_dispatch' && github.event.action == 'firestore-update'
-        run: |
-          if [ -z "${PUBLISH_REVISION}" ] || [ "${PUBLISH_REVISION}" = "null" ]; then
-            echo "ERROR: client_payload.revision missing for firestore-update event" >&2
-            exit 1
-          fi
-          if ! [[ "${PUBLISH_REVISION}" =~ ^[1-9][0-9]*$ ]]; then
-            echo "ERROR: client_payload.revision is not a positive integer: ${PUBLISH_REVISION}" >&2
-            exit 1
-          fi
-          echo "Validated PUBLISH_REVISION=${PUBLISH_REVISION}"
-
       - name: Compute start_monday (JST)
         id: monday
         run: |
           # GNU date / BSD date 両対応で JST 今週月曜を計算
           if date -d "now" +%Y-%m-%d > /dev/null 2>&1; then
-            # GNU date
             START_MONDAY=$(TZ=Asia/Tokyo date -d "this monday" +%Y-%m-%d 2>/dev/null \
               || TZ=Asia/Tokyo date -d "last monday" +%Y-%m-%d)
           else
-            # BSD date (macOS)
             START_MONDAY=$(TZ=Asia/Tokyo date -v -Mon +%Y-%m-%d)
           fi
           echo "start_monday=${START_MONDAY}" >> "$GITHUB_OUTPUT"
@@ -66,54 +44,13 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install firebase-admin
-        run: npm install --silent
-
-      - name: Generate availability from Firestore (Node + Firebase Admin SDK)
+      - name: Generate availability from VPS API
         env:
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           START_MONDAY: ${{ steps.monday.outputs.start_monday }}
           WEEK_COUNT: '8'
         run: |
           set -e
-          mkdir -p schedule/data/weeks
-          if [ -z "${FIREBASE_SERVICE_ACCOUNT_JSON}" ]; then
-            echo "ERROR: FIREBASE_SERVICE_ACCOUNT_JSON secret is not set" >&2
-            exit 1
-          fi
-          node scripts/generate-availability.mjs > /tmp/export.json 2>/tmp/export.err
-          echo "Generated $(wc -c < /tmp/export.json) bytes"
-          if [ -s /tmp/export.err ]; then
-            echo "--- stderr ---"
-            cat /tmp/export.err
-          fi
-          # sanity check：ok=true かつ weeks 配列が存在すること
-          if ! jq -e '.ok == true and (.weeks | length > 0)' /tmp/export.json > /dev/null; then
-            echo "ERROR: invalid response from Node generator" >&2
-            cat /tmp/export.json
-            exit 1
-          fi
-
-      - name: Split into week files
-        run: |
-          set -e
-          GENERATED_AT=$(jq -r '.generated_at' /tmp/export.json)
-          SOURCE_VERSION=$(jq -r '.source_version' /tmp/export.json)
-          echo "generated_at=${GENERATED_AT}  source_version=${SOURCE_VERSION}"
-          # weeks 配列を 1 週ずつ取り出し、generated_at / source_version を付与して個別 JSON に保存
-          jq -c '.weeks[]' /tmp/export.json | while read -r week; do
-            week_start=$(echo "$week" | jq -r '.week_start')
-            if [[ -z "$week_start" || "$week_start" == "null" ]]; then
-              echo "WARN: skip week with empty week_start"
-              continue
-            fi
-            echo "$week" | jq \
-              --arg ga "$GENERATED_AT" \
-              --arg sv "$SOURCE_VERSION" \
-              '. + {generated_at: $ga, source_version: $sv}' \
-              > "schedule/data/weeks/${week_start}.json"
-            echo "  wrote schedule/data/weeks/${week_start}.json"
-          done
+          node scripts/generate-availability.mjs
 
       - name: Commit and push if changed
         run: |
@@ -126,57 +63,3 @@ jobs:
           git add schedule/data/weeks/
           git commit -m "data: update availability $(TZ=Asia/Tokyo date +%Y-%m-%dT%H:%M%z)"
           git push
-
-      - name: Notify build_state of completion (build-availability only)
-        # 案 X: 新 Watchdog（build_state）起点のビルドのみ。commit/push の後に実行し、
-        # build_state を in_flight=false に戻して needs_build を解除する（途中編集は build_target と比較）。
-        if: github.event_name == 'repository_dispatch' && github.event.action == 'build-availability'
-        env:
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-          BUILD_TARGET_EDITED_AT: ${{ github.event.client_payload.build_target_edited_at }}
-        run: |
-          set -e
-          if [ -z "${FIREBASE_SERVICE_ACCOUNT_JSON}" ]; then
-            echo "ERROR: FIREBASE_SERVICE_ACCOUNT_JSON secret is not set" >&2
-            exit 1
-          fi
-          node scripts/notify-build-complete.mjs
-
-      - name: Notify GAS of publish completion (firestore-update only)
-        # PUBLISH_REVISION が空でない時のみ発火。cron / workflow_dispatch / [update-availability] では skip。
-        # secrets 未設定時は WARN 出して skip（M1 yuko prep 完了前のセーフガード）。
-        if: env.PUBLISH_REVISION != '' && env.PUBLISH_REVISION != 'null'
-        env:
-          GAS_PUBLISH_NOTIFY_URL: ${{ secrets.GAS_PUBLISH_NOTIFY_URL }}
-          GAS_WEBHOOK_SECRET: ${{ secrets.GAS_WEBHOOK_SECRET }}
-        run: |
-          set +e
-          if [ -z "$GAS_PUBLISH_NOTIFY_URL" ] || [ -z "$GAS_WEBHOOK_SECRET" ]; then
-            echo "WARN: GAS_PUBLISH_NOTIFY_URL or GAS_WEBHOOK_SECRET not configured; skipping notify"
-            exit 0
-          fi
-          PUBLISHED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          BODY=$(jq -nc --argjson rev "${PUBLISH_REVISION}" --arg at "${PUBLISHED_AT}" \
-            '{publishedRevision: $rev, publishedAt: $at}')
-          # NOTIFY_URL に既に query (?path=api/publish-complete) が含まれている前提で & 連結。
-          # 含まれていない場合のフォールバックとして ? と & を自動切替。
-          case "$GAS_PUBLISH_NOTIFY_URL" in
-            *\?*) SEP="&";;
-            *)    SEP="?";;
-          esac
-          # Apps Script Web App の POST は 302 redirect で googleusercontent.com に飛ぶ仕様。
-          # -L で追跡すると最終 GET で 405 が返るが、Apps Script の doPost 自体は実行成功している
-          # （publish_state の lastPublishedRevision が更新されることで確認できる）。
-          # そのため -L を外して 302 を成功扱いにする。
-          HTTP_CODE=$(curl -s -o /tmp/notify-response.json -w "%{http_code}" \
-            --max-time 30 \
-            -X POST "${GAS_PUBLISH_NOTIFY_URL}${SEP}secret=${GAS_WEBHOOK_SECRET}" \
-            -H "Content-Type: application/json" \
-            --data "${BODY}")
-          echo "GAS publishComplete: HTTP ${HTTP_CODE}"
-          cat /tmp/notify-response.json 2>/dev/null || true
-          echo
-          if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "302" ]; then
-            echo "ERROR: GAS publishComplete returned HTTP ${HTTP_CODE}" >&2
-            exit 1
-          fi
