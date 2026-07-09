@@ -5,10 +5,8 @@ on:
     # 6 時間毎の補強更新。dispatch 失敗時のセーフティネット。
     - cron: '0 */6 * * *'
   repository_dispatch:
-    # update-availability: 旧 ApiHandlers.gs triggerGitHubPagesUpdate
-    # firestore-update:    旧 DispatchEndpoint.gs（現在は GAS 側 disable・発火しない）
-    # build-availability:  新 Watchdog（案 X build_state）（GAS 側 disable・発火しない）
-    types: [update-availability, firestore-update, build-availability]
+    # update-availability: 一般トリガー（外部から curl で kick 可能）
+    types: [update-availability]
   workflow_dispatch:
 
 permissions:
