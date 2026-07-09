@@ -27,11 +27,18 @@ jobs:
       - name: Compute start_monday (JST)
         id: monday
         run: |
-          # GNU date / BSD date 両対応で JST 今週月曜を計算
+          # GNU date / BSD date 両対応で JST 「今週」の月曜を計算
+          # GNU date の "this monday" は木曜等に実行すると「次週の月曜」を返してしまう既知バグがあるため、
+          # day-of-week (1=Mon..7=Sun) を取って今日が月曜なら今日、それ以外は "last monday" を使う。
           if date -d "now" +%Y-%m-%d > /dev/null 2>&1; then
-            START_MONDAY=$(TZ=Asia/Tokyo date -d "this monday" +%Y-%m-%d 2>/dev/null \
-              || TZ=Asia/Tokyo date -d "last monday" +%Y-%m-%d)
+            DOW=$(TZ=Asia/Tokyo date +%u)
+            if [ "$DOW" = "1" ]; then
+              START_MONDAY=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+            else
+              START_MONDAY=$(TZ=Asia/Tokyo date -d "last monday" +%Y-%m-%d)
+            fi
           else
+            # BSD date (macOS) - -v -Mon は今週の月曜を返す
             START_MONDAY=$(TZ=Asia/Tokyo date -v -Mon +%Y-%m-%d)
           fi
           echo "start_monday=${START_MONDAY}" >> "$GITHUB_OUTPUT"
