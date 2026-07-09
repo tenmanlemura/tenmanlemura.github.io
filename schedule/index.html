@@ -6,8 +6,6 @@
 <title>空き状況 — 占い日より天満／太宰府・占い日よりLEMURA／久留米</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://script.google.com">
-<link rel="preconnect" href="https://script.googleusercontent.com">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Shippori+Mincho:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -163,10 +161,6 @@ body{background:var(--bg);color:var(--fg1);font-family:var(--sans);font-size:16p
 
 <script>
 // ── 設定 ─────────────────────────────────────────────
-// GAS Web App の Web App URL（/exec で終わるもの）を yuko が本番化時に書き換える。
-// 暫定値は dev 環境のもの。
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycby5MoObvujeXpiSmS-6KW4ABVP3T2zvu9BHHNEWOSGdGAf3BypNALW0r5CD3yBjSnPoJg/exec";
-
 const STORE_LABELS = { tanushimaru:"田主丸", dazaifu:"太宰府" };
 const STORE_SHORT  = { tanushimaru:"田",    dazaifu:"太" };
 const WDAYS = ["日","月","火","水","木","金","土"];
@@ -178,9 +172,11 @@ function fmtWeek(mon){const sun=new Date(mon);sun.setDate(sun.getDate()+6);const
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 
 // ── 空き状況取得（3 段 fallback） ───────────────────
-// (1) GitHub Pages 上の静的 JSON（同一 origin・数十 ms 目標）
-// (2) localStorage stale（24h 以内なら一旦表示 + 裏で GAS 再取得）
-// (3) GAS JSONP（最終 fallback・cache hit でも 3-4s）
+// (1) VPS live API（最新データ・2.5s timeout）
+// (2) GitHub Pages 上の静的 JSON（同一 origin・数十 ms 目標）
+// (3) localStorage stale（24h 以内なら一旦表示）
+const LIVE_API_URL = "https://tenmanlemura.com/api/public/availability";
+const LIVE_API_TIMEOUT_MS = 2500;
 const STATIC_JSON_BASE = "./data/weeks";
 const LOCAL_CACHE_PREFIX = "tenman:availability:v1:";
 const LOCAL_CACHE_MAX_AGE_MS = 86400000; // 24h
@@ -188,7 +184,17 @@ const LOCAL_CACHE_MAX_AGE_MS = 86400000; // 24h
 async function fetchAvailability(weekStartKey) {
   const t0 = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
 
-  // (1) 静的 JSON を優先取得
+  // (1) VPS live API を優先取得
+  try {
+    const data = await fetchFromLiveApi(weekStartKey);
+    if (data && Array.isArray(data.days) && data.days.length === 7) {
+      try { localStorage.setItem(LOCAL_CACHE_PREFIX + weekStartKey, JSON.stringify({ data: data, fetchedAt: Date.now() })); } catch (e) {}
+      try { console.log(`[perf] live API ${weekStartKey}: ${Math.round((((typeof performance!=="undefined"&&performance.now)?performance.now():Date.now())-t0))}ms`); } catch(e) {}
+      return data;
+    }
+  } catch (e) { /* fall through */ }
+
+  // (2) 静的 JSON fallback
   try {
     const url = `${STATIC_JSON_BASE}/${encodeURIComponent(weekStartKey)}.json?v=${Date.now()}`;
     const res = await fetch(url, { cache: "no-store" });
@@ -200,67 +206,88 @@ async function fetchAvailability(weekStartKey) {
     }
   } catch (e) { /* fall through */ }
 
-  // (2) localStorage stale fallback（24h 以内なら一旦表示・裏で GAS 再取得して cache 更新）
+  // (3) localStorage stale fallback（24h 以内なら一旦表示）
   try {
     const cached = localStorage.getItem(LOCAL_CACHE_PREFIX + weekStartKey);
     if (cached) {
       const parsed = JSON.parse(cached);
       if (parsed && parsed.fetchedAt && (Date.now() - parsed.fetchedAt) < LOCAL_CACHE_MAX_AGE_MS) {
-        // 裏で GAS を呼んで cache 更新（fire-and-forget・例外無視）
-        fetchFromGASJsonp(weekStartKey).then(fresh => {
-          try { localStorage.setItem(LOCAL_CACHE_PREFIX + weekStartKey, JSON.stringify({ data: fresh, fetchedAt: Date.now() })); } catch (e) {}
-        }).catch(() => {});
-        try { console.log(`[perf] localStorage stale ${weekStartKey}: ${Math.round((((typeof performance!=="undefined"&&performance.now)?performance.now():Date.now())-t0))}ms (revalidating)`); } catch(e) {}
+        try { console.log(`[perf] localStorage stale ${weekStartKey}: ${Math.round((((typeof performance!=="undefined"&&performance.now)?performance.now():Date.now())-t0))}ms`); } catch(e) {}
         return parsed.data;
       }
     }
   } catch (e) { /* fall through */ }
 
-  // (3) GAS JSONP fallback
-  try { console.log(`[perf] falling back to GAS JSONP for ${weekStartKey}`); } catch(e) {}
-  const fresh = await fetchFromGASJsonp(weekStartKey);
-  try { localStorage.setItem(LOCAL_CACHE_PREFIX + weekStartKey, JSON.stringify({ data: fresh, fetchedAt: Date.now() })); } catch (e) {}
-  try { console.log(`[perf] GAS JSONP ${weekStartKey}: ${Math.round((((typeof performance!=="undefined"&&performance.now)?performance.now():Date.now())-t0))}ms`); } catch(e) {}
-  return fresh;
+  throw new Error("availability unavailable");
 }
 
-// 既存の JSONP 取得（CORS 回避）。fallback として保持。
-function fetchFromGASJsonp(weekStartKey) {
-  return new Promise((resolve, reject) => {
-    const cbName = "jsonp_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
-    const tag = document.createElement("script");
-    let settled = false;
-    const cleanup = () => {
-      if (tag.parentNode) tag.parentNode.removeChild(tag);
-      delete window[cbName];
-    };
-    const timeoutId = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(new Error("timeout"));
-    }, 20000);
+async function fetchFromLiveApi(weekStartKey) {
+  const url = new URL(LIVE_API_URL);
+  url.searchParams.set("start", weekStartKey);
+  url.searchParams.set("weeks", "1");
 
-    window[cbName] = (data) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeoutId);
-      cleanup();
-      resolve(data);
-    };
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), LIVE_API_TIMEOUT_MS);
+  try {
+    const res = await fetch(url.toString(), {
+      cache: "no-store",
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const payload = await res.json();
+    return normalizeLiveAvailability(payload, weekStartKey);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
-    tag.onerror = () => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeoutId);
-      cleanup();
-      reject(new Error("network"));
-    };
+function normalizeLiveAvailability(payload, weekStartKey) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+  if (payload.start !== weekStartKey || payload.weeks !== 1) return null;
+  if (!Number.isFinite(payload.slot_duration_min)) return null;
+  if (!Array.isArray(payload.courses)) return null;
+  if (!Array.isArray(payload.days) || payload.days.length !== 7) return null;
 
-    const qs = `?path=api/availability&date=${encodeURIComponent(weekStartKey)}&callback=${cbName}`;
-    tag.src = GAS_API_URL + qs;
-    document.body.appendChild(tag);
-  });
+  const startDate = parseDateKeyUtc(weekStartKey);
+  if (!startDate) return null;
+
+  for (let i = 0; i < payload.days.length; i++) {
+    const day = payload.days[i];
+    const expectedDate = fmtDateKeyUtc(addDaysUtc(startDate, i));
+    if (!day || typeof day !== "object" || Array.isArray(day)) return null;
+    if (day.date !== expectedDate) return null;
+    if (typeof day.day_status !== "string" || day.day_status === "") return null;
+    if (!Object.prototype.hasOwnProperty.call(day, "location_code")) return null;
+    if (!Array.isArray(day.slots)) return null;
+  }
+
+  return {
+    week_start: weekStartKey,
+    courses: payload.courses,
+    days: payload.days,
+  };
+}
+
+function parseDateKeyUtc(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
+  if (!match) return null;
+  const year = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const day = Number.parseInt(match[3], 10);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+  return date;
+}
+
+function addDaysUtc(date, days) {
+  const next = new Date(date.getTime());
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function fmtDateKeyUtc(date) {
+  return date.toISOString().slice(0, 10);
 }
 
 // ── レンダリング ────────────────────────────────────
