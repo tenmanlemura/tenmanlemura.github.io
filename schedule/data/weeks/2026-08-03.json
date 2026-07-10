@@ -230,46 +230,10 @@
     },
     {
       "date": "2026-08-08",
-      "day_status": "open",
+      "day_status": "closed",
       "location_code": null,
       "location_label": null,
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "11:00",
-          "status": "open"
-        },
-        {
-          "start": "11:00",
-          "end": "12:00",
-          "status": "open"
-        },
-        {
-          "start": "12:00",
-          "end": "13:00",
-          "status": "open"
-        },
-        {
-          "start": "13:00",
-          "end": "14:00",
-          "status": "open"
-        },
-        {
-          "start": "14:00",
-          "end": "15:00",
-          "status": "open"
-        },
-        {
-          "start": "15:00",
-          "end": "16:00",
-          "status": "open"
-        },
-        {
-          "start": "16:00",
-          "end": "17:00",
-          "status": "open"
-        }
-      ]
+      "slots": []
     },
     {
       "date": "2026-08-09",
@@ -315,6 +279,6 @@
       ]
     }
   ],
-  "generated_at": "2026-07-10T18:38:59+09:00",
-  "source_version": "77df9f2e435af98049eb1e9e2c7e8991f6ed2ebc"
+  "generated_at": "2026-07-10T23:31:27+09:00",
+  "source_version": "57ee00699300353917f0fa2c150f8d15ed2dd451"
 }

@@ -230,34 +230,34 @@
     },
     {
       "date": "2026-07-11",
-      "day_status": "open",
-      "location_code": null,
-      "location_label": null,
+      "day_status": "limited",
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
       "slots": [
         {
           "start": "10:00",
           "end": "11:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "11:00",
           "end": "12:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "12:00",
           "end": "13:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "13:00",
           "end": "14:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "14:00",
           "end": "15:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "15:00",
@@ -315,6 +315,6 @@
       ]
     }
   ],
-  "generated_at": "2026-07-10T18:38:59+09:00",
-  "source_version": "77df9f2e435af98049eb1e9e2c7e8991f6ed2ebc"
+  "generated_at": "2026-07-10T23:31:27+09:00",
+  "source_version": "57ee00699300353917f0fa2c150f8d15ed2dd451"
 }
