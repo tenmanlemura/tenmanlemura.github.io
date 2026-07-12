@@ -195,7 +195,7 @@
         {
           "start": "16:00",
           "end": "17:00",
-          "status": "open"
+          "status": "blocked"
         }
       ]
     },
@@ -243,6 +243,6 @@
       ]
     }
   ],
-  "generated_at": "2026-07-12T11:56:38+09:00",
-  "source_version": "3abee7a8849aec8e7b9d812ab5b58bd0efd31d52"
+  "generated_at": "2026-07-12T17:21:26+09:00",
+  "source_version": "d7804caef8ade1f01e2071e7fcf2ae0daadc0326"
 }
