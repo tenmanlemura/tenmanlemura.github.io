@@ -21,36 +21,71 @@
       "slots": [
         {
           "start": "10:00",
+          "end": "10:30",
+          "status": "open"
+        },
+        {
+          "start": "10:30",
           "end": "11:00",
           "status": "open"
         },
         {
           "start": "11:00",
+          "end": "11:30",
+          "status": "open"
+        },
+        {
+          "start": "11:30",
           "end": "12:00",
           "status": "open"
         },
         {
           "start": "12:00",
+          "end": "12:30",
+          "status": "open"
+        },
+        {
+          "start": "12:30",
           "end": "13:00",
           "status": "open"
         },
         {
           "start": "13:00",
+          "end": "13:30",
+          "status": "open"
+        },
+        {
+          "start": "13:30",
           "end": "14:00",
           "status": "open"
         },
         {
           "start": "14:00",
+          "end": "14:30",
+          "status": "open"
+        },
+        {
+          "start": "14:30",
           "end": "15:00",
           "status": "open"
         },
         {
           "start": "15:00",
+          "end": "15:30",
+          "status": "open"
+        },
+        {
+          "start": "15:30",
           "end": "16:00",
           "status": "open"
         },
         {
           "start": "16:00",
+          "end": "16:30",
+          "status": "open"
+        },
+        {
+          "start": "16:30",
           "end": "17:00",
           "status": "open"
         }
@@ -64,36 +99,71 @@
       "slots": [
         {
           "start": "10:00",
+          "end": "10:30",
+          "status": "open"
+        },
+        {
+          "start": "10:30",
           "end": "11:00",
           "status": "open"
         },
         {
           "start": "11:00",
+          "end": "11:30",
+          "status": "open"
+        },
+        {
+          "start": "11:30",
           "end": "12:00",
           "status": "open"
         },
         {
           "start": "12:00",
+          "end": "12:30",
+          "status": "open"
+        },
+        {
+          "start": "12:30",
           "end": "13:00",
           "status": "open"
         },
         {
           "start": "13:00",
+          "end": "13:30",
+          "status": "open"
+        },
+        {
+          "start": "13:30",
           "end": "14:00",
           "status": "open"
         },
         {
           "start": "14:00",
+          "end": "14:30",
+          "status": "open"
+        },
+        {
+          "start": "14:30",
           "end": "15:00",
           "status": "open"
         },
         {
           "start": "15:00",
+          "end": "15:30",
+          "status": "open"
+        },
+        {
+          "start": "15:30",
           "end": "16:00",
           "status": "open"
         },
         {
           "start": "16:00",
+          "end": "16:30",
+          "status": "open"
+        },
+        {
+          "start": "16:30",
           "end": "17:00",
           "status": "open"
         }
@@ -107,36 +177,71 @@
       "slots": [
         {
           "start": "10:00",
+          "end": "10:30",
+          "status": "open"
+        },
+        {
+          "start": "10:30",
           "end": "11:00",
           "status": "open"
         },
         {
           "start": "11:00",
+          "end": "11:30",
+          "status": "open"
+        },
+        {
+          "start": "11:30",
           "end": "12:00",
           "status": "open"
         },
         {
           "start": "12:00",
+          "end": "12:30",
+          "status": "open"
+        },
+        {
+          "start": "12:30",
           "end": "13:00",
           "status": "open"
         },
         {
           "start": "13:00",
+          "end": "13:30",
+          "status": "open"
+        },
+        {
+          "start": "13:30",
           "end": "14:00",
           "status": "open"
         },
         {
           "start": "14:00",
+          "end": "14:30",
+          "status": "open"
+        },
+        {
+          "start": "14:30",
           "end": "15:00",
           "status": "open"
         },
         {
           "start": "15:00",
+          "end": "15:30",
+          "status": "open"
+        },
+        {
+          "start": "15:30",
           "end": "16:00",
           "status": "open"
         },
         {
           "start": "16:00",
+          "end": "16:30",
+          "status": "open"
+        },
+        {
+          "start": "16:30",
           "end": "17:00",
           "status": "open"
         }
@@ -150,36 +255,71 @@
       "slots": [
         {
           "start": "10:00",
+          "end": "10:30",
+          "status": "open"
+        },
+        {
+          "start": "10:30",
           "end": "11:00",
           "status": "open"
         },
         {
           "start": "11:00",
+          "end": "11:30",
+          "status": "open"
+        },
+        {
+          "start": "11:30",
           "end": "12:00",
           "status": "open"
         },
         {
           "start": "12:00",
+          "end": "12:30",
+          "status": "open"
+        },
+        {
+          "start": "12:30",
           "end": "13:00",
           "status": "open"
         },
         {
           "start": "13:00",
+          "end": "13:30",
+          "status": "open"
+        },
+        {
+          "start": "13:30",
           "end": "14:00",
           "status": "open"
         },
         {
           "start": "14:00",
+          "end": "14:30",
+          "status": "open"
+        },
+        {
+          "start": "14:30",
           "end": "15:00",
           "status": "open"
         },
         {
           "start": "15:00",
+          "end": "15:30",
+          "status": "open"
+        },
+        {
+          "start": "15:30",
           "end": "16:00",
           "status": "open"
         },
         {
           "start": "16:00",
+          "end": "16:30",
+          "status": "open"
+        },
+        {
+          "start": "16:30",
           "end": "17:00",
           "status": "open"
         }
@@ -193,36 +333,71 @@
       "slots": [
         {
           "start": "10:00",
+          "end": "10:30",
+          "status": "open"
+        },
+        {
+          "start": "10:30",
           "end": "11:00",
           "status": "open"
         },
         {
           "start": "11:00",
+          "end": "11:30",
+          "status": "open"
+        },
+        {
+          "start": "11:30",
           "end": "12:00",
           "status": "open"
         },
         {
           "start": "12:00",
+          "end": "12:30",
+          "status": "open"
+        },
+        {
+          "start": "12:30",
           "end": "13:00",
           "status": "open"
         },
         {
           "start": "13:00",
+          "end": "13:30",
+          "status": "open"
+        },
+        {
+          "start": "13:30",
           "end": "14:00",
           "status": "open"
         },
         {
           "start": "14:00",
+          "end": "14:30",
+          "status": "open"
+        },
+        {
+          "start": "14:30",
           "end": "15:00",
           "status": "open"
         },
         {
           "start": "15:00",
+          "end": "15:30",
+          "status": "open"
+        },
+        {
+          "start": "15:30",
           "end": "16:00",
           "status": "open"
         },
         {
           "start": "16:00",
+          "end": "16:30",
+          "status": "open"
+        },
+        {
+          "start": "16:30",
           "end": "17:00",
           "status": "open"
         }
@@ -236,36 +411,71 @@
       "slots": [
         {
           "start": "10:00",
+          "end": "10:30",
+          "status": "open"
+        },
+        {
+          "start": "10:30",
           "end": "11:00",
           "status": "open"
         },
         {
           "start": "11:00",
+          "end": "11:30",
+          "status": "open"
+        },
+        {
+          "start": "11:30",
           "end": "12:00",
           "status": "open"
         },
         {
           "start": "12:00",
+          "end": "12:30",
+          "status": "open"
+        },
+        {
+          "start": "12:30",
           "end": "13:00",
           "status": "open"
         },
         {
           "start": "13:00",
+          "end": "13:30",
+          "status": "open"
+        },
+        {
+          "start": "13:30",
           "end": "14:00",
           "status": "open"
         },
         {
           "start": "14:00",
+          "end": "14:30",
+          "status": "open"
+        },
+        {
+          "start": "14:30",
           "end": "15:00",
           "status": "open"
         },
         {
           "start": "15:00",
+          "end": "15:30",
+          "status": "open"
+        },
+        {
+          "start": "15:30",
           "end": "16:00",
           "status": "open"
         },
         {
           "start": "16:00",
+          "end": "16:30",
+          "status": "open"
+        },
+        {
+          "start": "16:30",
           "end": "17:00",
           "status": "open"
         }
@@ -279,42 +489,77 @@
       "slots": [
         {
           "start": "10:00",
+          "end": "10:30",
+          "status": "blocked"
+        },
+        {
+          "start": "10:30",
           "end": "11:00",
           "status": "blocked"
         },
         {
           "start": "11:00",
+          "end": "11:30",
+          "status": "blocked"
+        },
+        {
+          "start": "11:30",
           "end": "12:00",
           "status": "blocked"
         },
         {
           "start": "12:00",
+          "end": "12:30",
+          "status": "open"
+        },
+        {
+          "start": "12:30",
           "end": "13:00",
           "status": "open"
         },
         {
           "start": "13:00",
+          "end": "13:30",
+          "status": "open"
+        },
+        {
+          "start": "13:30",
           "end": "14:00",
           "status": "open"
         },
         {
           "start": "14:00",
+          "end": "14:30",
+          "status": "open"
+        },
+        {
+          "start": "14:30",
           "end": "15:00",
           "status": "open"
         },
         {
           "start": "15:00",
+          "end": "15:30",
+          "status": "open"
+        },
+        {
+          "start": "15:30",
           "end": "16:00",
           "status": "open"
         },
         {
           "start": "16:00",
+          "end": "16:30",
+          "status": "open"
+        },
+        {
+          "start": "16:30",
           "end": "17:00",
           "status": "open"
         }
       ]
     }
   ],
-  "generated_at": "2026-07-20T23:09:56+09:00",
-  "source_version": "31a30f68f9c69af67be64b99a7e4c2c19162c1e4"
+  "generated_at": "2026-07-21T04:45:38+09:00",
+  "source_version": "06f1d171a116921040cb450842b43b0a50a87b93"
 }
