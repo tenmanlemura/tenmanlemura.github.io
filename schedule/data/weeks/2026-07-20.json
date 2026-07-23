@@ -185,81 +185,10 @@
     },
     {
       "date": "2026-07-24",
-      "day_status": "open",
+      "day_status": "closed",
       "location_code": null,
       "location_label": null,
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "10:30",
-          "status": "open"
-        },
-        {
-          "start": "10:30",
-          "end": "11:00",
-          "status": "open"
-        },
-        {
-          "start": "11:00",
-          "end": "11:30",
-          "status": "open"
-        },
-        {
-          "start": "11:30",
-          "end": "12:00",
-          "status": "open"
-        },
-        {
-          "start": "12:00",
-          "end": "12:30",
-          "status": "open"
-        },
-        {
-          "start": "12:30",
-          "end": "13:00",
-          "status": "open"
-        },
-        {
-          "start": "13:00",
-          "end": "13:30",
-          "status": "open"
-        },
-        {
-          "start": "13:30",
-          "end": "14:00",
-          "status": "open"
-        },
-        {
-          "start": "14:00",
-          "end": "14:30",
-          "status": "open"
-        },
-        {
-          "start": "14:30",
-          "end": "15:00",
-          "status": "open"
-        },
-        {
-          "start": "15:00",
-          "end": "15:30",
-          "status": "open"
-        },
-        {
-          "start": "15:30",
-          "end": "16:00",
-          "status": "open"
-        },
-        {
-          "start": "16:00",
-          "end": "16:30",
-          "status": "open"
-        },
-        {
-          "start": "16:30",
-          "end": "17:00",
-          "status": "open"
-        }
-      ]
+      "slots": []
     },
     {
       "date": "2026-07-25",
@@ -275,7 +204,7 @@
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "11:00",
@@ -325,7 +254,7 @@
         {
           "start": "15:30",
           "end": "16:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "16:00",
@@ -353,7 +282,7 @@
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "11:00",
@@ -418,6 +347,6 @@
       ]
     }
   ],
-  "generated_at": "2026-07-23T17:33:22+09:00",
-  "source_version": "eef5d26e208348d27c73c5b5b187427abb74a819"
+  "generated_at": "2026-07-23T23:05:15+09:00",
+  "source_version": "736eb305c16e5e2f707d5668e585178f69bcb012"
 }
