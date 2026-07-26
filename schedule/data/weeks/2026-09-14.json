@@ -1,5 +1,5 @@
 {
-  "week_start": "2026-09-07",
+  "week_start": "2026-09-14",
   "courses": [
     {
       "code": "60",
@@ -14,7 +14,7 @@
   ],
   "days": [
     {
-      "date": "2026-09-07",
+      "date": "2026-09-14",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -92,7 +92,7 @@
       ]
     },
     {
-      "date": "2026-09-08",
+      "date": "2026-09-15",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -170,7 +170,7 @@
       ]
     },
     {
-      "date": "2026-09-09",
+      "date": "2026-09-16",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -248,7 +248,7 @@
       ]
     },
     {
-      "date": "2026-09-10",
+      "date": "2026-09-17",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -326,7 +326,7 @@
       ]
     },
     {
-      "date": "2026-09-11",
+      "date": "2026-09-18",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -404,7 +404,7 @@
       ]
     },
     {
-      "date": "2026-09-12",
+      "date": "2026-09-19",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -482,7 +482,7 @@
       ]
     },
     {
-      "date": "2026-09-13",
+      "date": "2026-09-20",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
