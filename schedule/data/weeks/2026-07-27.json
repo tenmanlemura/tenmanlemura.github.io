@@ -18,99 +18,32 @@
       "day_status": "closed",
       "location_code": null,
       "location_label": null,
-      "slots": []
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-07-28",
       "day_status": "closed",
       "location_code": null,
       "location_label": null,
-      "slots": []
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-07-29",
-      "day_status": "limited",
-      "location_code": "tanushimaru",
-      "location_label": "田主丸店",
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "10:30",
-          "status": "open"
-        },
-        {
-          "start": "10:30",
-          "end": "11:00",
-          "status": "open"
-        },
-        {
-          "start": "11:00",
-          "end": "11:30",
-          "status": "open"
-        },
-        {
-          "start": "11:30",
-          "end": "12:00",
-          "status": "open"
-        },
-        {
-          "start": "12:00",
-          "end": "12:30",
-          "status": "open"
-        },
-        {
-          "start": "12:30",
-          "end": "13:00",
-          "status": "open"
-        },
-        {
-          "start": "13:00",
-          "end": "13:30",
-          "status": "open"
-        },
-        {
-          "start": "13:30",
-          "end": "14:00",
-          "status": "open"
-        },
-        {
-          "start": "14:00",
-          "end": "14:30",
-          "status": "blocked"
-        },
-        {
-          "start": "14:30",
-          "end": "15:00",
-          "status": "blocked"
-        },
-        {
-          "start": "15:00",
-          "end": "15:30",
-          "status": "blocked"
-        },
-        {
-          "start": "15:30",
-          "end": "16:00",
-          "status": "blocked"
-        },
-        {
-          "start": "16:00",
-          "end": "16:30",
-          "status": "open"
-        },
-        {
-          "start": "16:30",
-          "end": "17:00",
-          "status": "open"
-        }
-      ]
+      "day_status": "closed",
+      "location_code": null,
+      "location_label": null,
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-07-30",
       "day_status": "closed",
       "location_code": null,
       "location_label": null,
-      "slots": []
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-07-31",
@@ -192,24 +125,24 @@
     },
     {
       "date": "2026-08-01",
-      "day_status": "open",
-      "location_code": null,
-      "location_label": null,
+      "day_status": "limited",
+      "location_code": "tanushimaru",
+      "location_label": "田主丸店",
       "slots": [
         {
           "start": "10:00",
           "end": "10:30",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "11:00",
           "end": "11:30",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "11:30",
@@ -347,6 +280,6 @@
       ]
     }
   ],
-  "generated_at": "2026-07-30T11:32:31+09:00",
-  "source_version": "5008dea914c002e70ebabe25336b0a27e95166c0"
+  "generated_at": "2026-07-30T17:29:37+09:00",
+  "source_version": "c5e756d8cc784b3453b375f93dc53c338d2e4d3a"
 }
