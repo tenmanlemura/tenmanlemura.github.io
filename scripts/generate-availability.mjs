@@ -5,6 +5,7 @@ const DEFAULT_API_BASE = "https://tenmanlemura.com/api/public";
 const DEFAULT_WEEK_COUNT = 8;
 const MAX_WEEK_COUNT = 12;
 const DEFAULT_TIMEOUT_MS = 15_000;
+const RETRY_BACKOFF_MS = [3_000, 5_000];
 const JST_TIMEZONE = "Asia/Tokyo";
 const OUTPUT_DIR = path.join("schedule", "data", "weeks");
 
@@ -55,6 +56,27 @@ function parseWeekCount(raw) {
 }
 
 async function fetchAvailabilityWeek(apiBase, weekStart) {
+  const attempts = 1 + RETRY_BACKOFF_MS.length;
+  let lastError;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fetchAvailabilityWeekOnce(apiBase, weekStart);
+    } catch (err) {
+      lastError = err;
+      const backoffMs = RETRY_BACKOFF_MS[attempt - 1];
+      if (!backoffMs) break;
+      process.stdout.write(
+        `[generate-availability] retry ${attempt}/${RETRY_BACKOFF_MS.length} for week ${weekStart} after error: ${err?.message || err}\n`
+      );
+      await sleep(backoffMs);
+    }
+  }
+
+  throw lastError;
+}
+
+async function fetchAvailabilityWeekOnce(apiBase, weekStart) {
   const url = new URL(`${apiBase}/availability`);
   url.searchParams.set("start", weekStart);
   url.searchParams.set("weeks", "1");
@@ -83,6 +105,10 @@ async function fetchAvailabilityWeek(apiBase, weekStart) {
 
   validateAvailabilityPayload(payload, weekStart, url);
   return payload;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function getTimeoutMs() {

@@ -1,0 +1,143 @@
+name: Health canary
+
+on:
+  schedule:
+    # 30 分ごとの外形監視。GitHub Actions は UTC cron だが、表示時刻は step 内で JST を出す。
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: health-canary
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check public health endpoint
+        env:
+          HEALTH_URL: https://tenmanlemura.com/api/public/health
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          node --input-type=module <<'NODE'
+          const healthUrl = process.env.HEALTH_URL;
+          const discordWebhookUrl = String(process.env.DISCORD_WEBHOOK_URL || "").trim();
+          const startedAt = Date.now();
+          const checkedAtJst = formatJst(new Date(startedAt));
+          const timeoutMs = 10_000;
+          const slowMs = 5_000;
+          let response;
+          let bodyText = "";
+          let payload = null;
+          let elapsedMs = 0;
+          let failure = null;
+
+          try {
+            response = await fetch(healthUrl, {
+              headers: { accept: "application/json" },
+              signal: AbortSignal.timeout(timeoutMs),
+            });
+            elapsedMs = Date.now() - startedAt;
+            bodyText = await response.text();
+            if (bodyText) {
+              try {
+                payload = JSON.parse(bodyText);
+              } catch (err) {
+                failure = `invalid_json: ${err?.message || err}`;
+              }
+            }
+          } catch (err) {
+            elapsedMs = Date.now() - startedAt;
+            failure = `connection_failed: ${err?.message || err}`;
+          }
+
+          if (!failure && !response) {
+            failure = "connection_failed: no response";
+          }
+
+          if (!failure && response.status !== 200) {
+            failure =
+              response.status === 404
+                ? "http_404: /api/public/health is not found. The endpoint may not be deployed yet."
+                : `http_${response.status}: ${response.statusText || "non-200 response"}`;
+          }
+
+          if (!failure && (!payload || typeof payload !== "object" || Array.isArray(payload))) {
+            failure = "invalid_json: health response root is not an object";
+          }
+
+          if (!failure && payload.status !== "ok") {
+            const flags = Array.isArray(payload.flags) ? payload.flags.join(",") : "";
+            failure = `status_${payload.status || "missing"}${flags ? ` flags=${flags}` : ""}`;
+          }
+
+          if (!failure && elapsedMs > slowMs) {
+            failure = `slow_response: ${elapsedMs}ms > ${slowMs}ms`;
+          }
+
+          if (!failure) {
+            console.log(`Health OK: ${response.status} ${elapsedMs}ms at ${checkedAtJst}`);
+            process.exit(0);
+          }
+
+          const message = [
+            "tenman public health canary failed",
+            `checked_at_jst: ${checkedAtJst}`,
+            `url: ${healthUrl}`,
+            `reason: ${failure}`,
+            response ? `http_status: ${response.status}` : "http_status: none",
+            `elapsed_ms: ${elapsedMs}`,
+          ].join("\n");
+
+          console.error(message);
+          await notifyDiscord(discordWebhookUrl, message);
+          process.exit(1);
+
+          async function notifyDiscord(webhookUrl, messageText) {
+            if (!webhookUrl) {
+              console.log("Discord webhook is not configured; skipping Discord notification.");
+              return;
+            }
+
+            try {
+              const notifyResponse = await fetch(webhookUrl, {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ content: `\`\`\`\n${messageText.slice(0, 1800)}\n\`\`\`` }),
+                signal: AbortSignal.timeout(5_000),
+              });
+              if (!notifyResponse.ok) {
+                console.log(`Discord notification failed with HTTP ${notifyResponse.status}; continuing to fail workflow.`);
+                return;
+              }
+              console.log("Discord notification sent.");
+            } catch (err) {
+              console.log(`Discord notification failed: ${err?.message || err}; continuing to fail workflow.`);
+            }
+          }
+
+          function formatJst(date) {
+            const parts = new Intl.DateTimeFormat("en-CA", {
+              timeZone: "Asia/Tokyo",
+              hour12: false,
+              hourCycle: "h23",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }).formatToParts(date);
+            const values = Object.fromEntries(parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+            return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}+09:00`;
+          }
+          NODE
