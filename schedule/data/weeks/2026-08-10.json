@@ -15,10 +15,81 @@
   "days": [
     {
       "date": "2026-08-10",
-      "day_status": "closed",
+      "day_status": "open",
       "location_code": null,
       "location_label": null,
-      "slots": []
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "10:30",
+          "status": "open"
+        },
+        {
+          "start": "10:30",
+          "end": "11:00",
+          "status": "open"
+        },
+        {
+          "start": "11:00",
+          "end": "11:30",
+          "status": "open"
+        },
+        {
+          "start": "11:30",
+          "end": "12:00",
+          "status": "open"
+        },
+        {
+          "start": "12:00",
+          "end": "12:30",
+          "status": "open"
+        },
+        {
+          "start": "12:30",
+          "end": "13:00",
+          "status": "open"
+        },
+        {
+          "start": "13:00",
+          "end": "13:30",
+          "status": "open"
+        },
+        {
+          "start": "13:30",
+          "end": "14:00",
+          "status": "open"
+        },
+        {
+          "start": "14:00",
+          "end": "14:30",
+          "status": "open"
+        },
+        {
+          "start": "14:30",
+          "end": "15:00",
+          "status": "open"
+        },
+        {
+          "start": "15:00",
+          "end": "15:30",
+          "status": "open"
+        },
+        {
+          "start": "15:30",
+          "end": "16:00",
+          "status": "open"
+        },
+        {
+          "start": "16:00",
+          "end": "16:30",
+          "status": "open"
+        },
+        {
+          "start": "16:30",
+          "end": "17:00",
+          "status": "open"
+        }
+      ]
     },
     {
       "date": "2026-08-11",
@@ -489,6 +560,6 @@
       ]
     }
   ],
-  "generated_at": "2026-08-04T23:19:35+09:00",
-  "source_version": "fe5a75888651f013b0c7d6079b801b6070e725d1"
+  "generated_at": "2026-08-05T04:39:29+09:00",
+  "source_version": "e3db6dfc807bf98923421200712d20f8d07443ad"
 }
