@@ -31,81 +31,11 @@
     },
     {
       "date": "2026-08-05",
-      "day_status": "limited",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "10:30",
-          "status": "blocked"
-        },
-        {
-          "start": "10:30",
-          "end": "11:00",
-          "status": "blocked"
-        },
-        {
-          "start": "11:00",
-          "end": "11:30",
-          "status": "blocked"
-        },
-        {
-          "start": "11:30",
-          "end": "12:00",
-          "status": "blocked"
-        },
-        {
-          "start": "12:00",
-          "end": "12:30",
-          "status": "blocked"
-        },
-        {
-          "start": "12:30",
-          "end": "13:00",
-          "status": "blocked"
-        },
-        {
-          "start": "13:00",
-          "end": "13:30",
-          "status": "blocked"
-        },
-        {
-          "start": "13:30",
-          "end": "14:00",
-          "status": "blocked"
-        },
-        {
-          "start": "14:00",
-          "end": "14:30",
-          "status": "open"
-        },
-        {
-          "start": "14:30",
-          "end": "15:00",
-          "status": "open"
-        },
-        {
-          "start": "15:00",
-          "end": "15:30",
-          "status": "blocked"
-        },
-        {
-          "start": "15:30",
-          "end": "16:00",
-          "status": "blocked"
-        },
-        {
-          "start": "16:00",
-          "end": "16:30",
-          "status": "blocked"
-        },
-        {
-          "start": "16:30",
-          "end": "17:00",
-          "status": "blocked"
-        }
-      ]
+      "day_status": "closed",
+      "location_code": null,
+      "location_label": null,
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-08-06",
@@ -278,6 +208,6 @@
       ]
     }
   ],
-  "generated_at": "2026-08-04T17:39:55+09:00",
-  "source_version": "4d48844854e77c8e09fbf3256b6e76367c66bba5"
+  "generated_at": "2026-08-04T23:19:35+09:00",
+  "source_version": "fe5a75888651f013b0c7d6079b801b6070e725d1"
 }
