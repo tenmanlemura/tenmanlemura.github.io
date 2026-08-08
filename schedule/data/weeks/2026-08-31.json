@@ -15,13 +15,6 @@
   "days": [
     {
       "date": "2026-08-31",
-      "day_status": "closed",
-      "location_code": null,
-      "location_label": null,
-      "slots": []
-    },
-    {
-      "date": "2026-09-01",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -97,6 +90,13 @@
           "status": "open"
         }
       ]
+    },
+    {
+      "date": "2026-09-01",
+      "day_status": "closed",
+      "location_code": null,
+      "location_label": null,
+      "slots": []
     },
     {
       "date": "2026-09-02",
@@ -178,159 +178,18 @@
     },
     {
       "date": "2026-09-03",
-      "day_status": "open",
+      "day_status": "closed",
       "location_code": null,
       "location_label": null,
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "10:30",
-          "status": "open"
-        },
-        {
-          "start": "10:30",
-          "end": "11:00",
-          "status": "open"
-        },
-        {
-          "start": "11:00",
-          "end": "11:30",
-          "status": "open"
-        },
-        {
-          "start": "11:30",
-          "end": "12:00",
-          "status": "open"
-        },
-        {
-          "start": "12:00",
-          "end": "12:30",
-          "status": "open"
-        },
-        {
-          "start": "12:30",
-          "end": "13:00",
-          "status": "open"
-        },
-        {
-          "start": "13:00",
-          "end": "13:30",
-          "status": "open"
-        },
-        {
-          "start": "13:30",
-          "end": "14:00",
-          "status": "open"
-        },
-        {
-          "start": "14:00",
-          "end": "14:30",
-          "status": "open"
-        },
-        {
-          "start": "14:30",
-          "end": "15:00",
-          "status": "open"
-        },
-        {
-          "start": "15:00",
-          "end": "15:30",
-          "status": "open"
-        },
-        {
-          "start": "15:30",
-          "end": "16:00",
-          "status": "open"
-        },
-        {
-          "start": "16:00",
-          "end": "16:30",
-          "status": "open"
-        },
-        {
-          "start": "16:30",
-          "end": "17:00",
-          "status": "open"
-        }
-      ]
+      "slots": []
     },
     {
       "date": "2026-09-04",
-      "day_status": "open",
+      "day_status": "event",
       "location_code": null,
-      "location_label": null,
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "10:30",
-          "status": "open"
-        },
-        {
-          "start": "10:30",
-          "end": "11:00",
-          "status": "open"
-        },
-        {
-          "start": "11:00",
-          "end": "11:30",
-          "status": "open"
-        },
-        {
-          "start": "11:30",
-          "end": "12:00",
-          "status": "open"
-        },
-        {
-          "start": "12:00",
-          "end": "12:30",
-          "status": "open"
-        },
-        {
-          "start": "12:30",
-          "end": "13:00",
-          "status": "open"
-        },
-        {
-          "start": "13:00",
-          "end": "13:30",
-          "status": "open"
-        },
-        {
-          "start": "13:30",
-          "end": "14:00",
-          "status": "open"
-        },
-        {
-          "start": "14:00",
-          "end": "14:30",
-          "status": "open"
-        },
-        {
-          "start": "14:30",
-          "end": "15:00",
-          "status": "open"
-        },
-        {
-          "start": "15:00",
-          "end": "15:30",
-          "status": "open"
-        },
-        {
-          "start": "15:30",
-          "end": "16:00",
-          "status": "open"
-        },
-        {
-          "start": "16:00",
-          "end": "16:30",
-          "status": "open"
-        },
-        {
-          "start": "16:30",
-          "end": "17:00",
-          "status": "open"
-        }
-      ]
+      "event_name": "ゆめタウン博多",
+      "event_venue": "",
+      "slots": []
     },
     {
       "date": "2026-09-05",
@@ -489,6 +348,6 @@
       ]
     }
   ],
-  "generated_at": "2026-08-08T15:56:26+09:00",
-  "source_version": "fd15f211d0829c07115c4b8529317e0b65bf7780"
+  "generated_at": "2026-08-08T21:51:50+09:00",
+  "source_version": "06da8db7c39d53cc4090b77cb083f66104f493d4"
 }
