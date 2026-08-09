@@ -15,81 +15,11 @@
   "days": [
     {
       "date": "2026-08-10",
-      "day_status": "full",
-      "location_code": "tanushimaru",
-      "location_label": "田主丸店",
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "10:30",
-          "status": "blocked"
-        },
-        {
-          "start": "10:30",
-          "end": "11:00",
-          "status": "blocked"
-        },
-        {
-          "start": "11:00",
-          "end": "11:30",
-          "status": "blocked"
-        },
-        {
-          "start": "11:30",
-          "end": "12:00",
-          "status": "blocked"
-        },
-        {
-          "start": "12:00",
-          "end": "12:30",
-          "status": "blocked"
-        },
-        {
-          "start": "12:30",
-          "end": "13:00",
-          "status": "blocked"
-        },
-        {
-          "start": "13:00",
-          "end": "13:30",
-          "status": "blocked"
-        },
-        {
-          "start": "13:30",
-          "end": "14:00",
-          "status": "blocked"
-        },
-        {
-          "start": "14:00",
-          "end": "14:30",
-          "status": "blocked"
-        },
-        {
-          "start": "14:30",
-          "end": "15:00",
-          "status": "blocked"
-        },
-        {
-          "start": "15:00",
-          "end": "15:30",
-          "status": "blocked"
-        },
-        {
-          "start": "15:30",
-          "end": "16:00",
-          "status": "blocked"
-        },
-        {
-          "start": "16:00",
-          "end": "16:30",
-          "status": "blocked"
-        },
-        {
-          "start": "16:30",
-          "end": "17:00",
-          "status": "blocked"
-        }
-      ]
+      "day_status": "closed",
+      "location_code": null,
+      "location_label": null,
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-08-11",
@@ -489,6 +419,6 @@
       ]
     }
   ],
-  "generated_at": "2026-08-09T15:59:09+09:00",
-  "source_version": "0298d6ed6e353bb66b62f79aee1decea9071474e"
+  "generated_at": "2026-08-09T21:54:17+09:00",
+  "source_version": "bb0263237fa7478334b798a43b6d57d3d75274cc"
 }
