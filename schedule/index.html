@@ -68,9 +68,12 @@ body{background:var(--bg);color:var(--fg1);font-family:var(--sans);font-size:16p
 .cal-head-day .d-wd.sun{color:#EF4444}
 .cal-head-day .d-wd.sat{color:#3B82F6}
 .cal-head-day.is-today .d-num{color:var(--teal);text-decoration:underline;text-underline-offset:2px}
-.cal-head-day .store-badge{display:inline-block;margin-top:2px;font-size:9px;font-weight:700;color:#fff;background:var(--teal2);border-radius:3px;padding:1px 5px;line-height:1.4}
-.cal-head-day .event-badge{display:inline-block;margin-top:2px;font-size:9px;font-weight:700;color:#fff;background:#7A5AB0;border-radius:3px;padding:1px 5px;line-height:1.4}
-.cal-head-day .closed-badge{display:inline-block;margin-top:2px;font-size:9px;font-weight:700;color:#fff;background:#8A94A6;border-radius:3px;padding:1px 5px;line-height:1.4}
+.cal-head-day .store-badge{display:inline-block;margin-top:2px;font-size:9px;font-weight:700;color:#fff;background:var(--teal2);border-radius:3px;padding:1px 5px;line-height:1.4;white-space:nowrap}
+/* 太宰府は梅紫（管理画面 spec 012 と同じ対応・田主丸との濃淡違いでは見間違うため） */
+.cal-head-day .store-badge.dazaifu{background:#9B6BB5}
+/* イベントは紫→オレンジ系（太宰府の梅紫と衝突するため・管理画面のイベント色系統に統一）。nowrap+詰め padding で 2 行折り返しを禁止 */
+.cal-head-day .event-badge{display:inline-block;margin-top:2px;font-size:9px;font-weight:700;color:#fff;background:#C97C15;border-radius:3px;padding:1px 4px;line-height:1.4;white-space:nowrap}
+.cal-head-day .closed-badge{display:inline-block;margin-top:2px;font-size:9px;font-weight:700;color:#fff;background:#8A94A6;border-radius:3px;padding:1px 5px;line-height:1.4;white-space:nowrap}
 
 .cal-row{display:grid;grid-template-columns:42px repeat(7,1fr);border-top:1px solid var(--border)}
 .cal-row.alt{background:var(--bg)}
@@ -356,7 +359,7 @@ function render() {
       } else if (data.day_status === "closed") {
         badge = `<span class="closed-badge">店休</span>`;
       } else if (data.location_code) {
-        badge = `<span class="store-badge">${STORE_SHORT[data.location_code] || ""}</span>`;
+        badge = `<span class="store-badge ${data.location_code === "dazaifu" ? "dazaifu" : ""}">${STORE_SHORT[data.location_code] || ""}</span>`;
       }
     }
 
