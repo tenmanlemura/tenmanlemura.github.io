@@ -15,6 +15,84 @@
   "days": [
     {
       "date": "2026-09-14",
+      "day_status": "limited",
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "10:30",
+          "status": "blocked"
+        },
+        {
+          "start": "10:30",
+          "end": "11:00",
+          "status": "open"
+        },
+        {
+          "start": "11:00",
+          "end": "11:30",
+          "status": "open"
+        },
+        {
+          "start": "11:30",
+          "end": "12:00",
+          "status": "open"
+        },
+        {
+          "start": "12:00",
+          "end": "12:30",
+          "status": "open"
+        },
+        {
+          "start": "12:30",
+          "end": "13:00",
+          "status": "open"
+        },
+        {
+          "start": "13:00",
+          "end": "13:30",
+          "status": "open"
+        },
+        {
+          "start": "13:30",
+          "end": "14:00",
+          "status": "open"
+        },
+        {
+          "start": "14:00",
+          "end": "14:30",
+          "status": "open"
+        },
+        {
+          "start": "14:30",
+          "end": "15:00",
+          "status": "open"
+        },
+        {
+          "start": "15:00",
+          "end": "15:30",
+          "status": "open"
+        },
+        {
+          "start": "15:30",
+          "end": "16:00",
+          "status": "open"
+        },
+        {
+          "start": "16:00",
+          "end": "16:30",
+          "status": "open"
+        },
+        {
+          "start": "16:30",
+          "end": "17:00",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "date": "2026-09-15",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -90,13 +168,6 @@
           "status": "open"
         }
       ]
-    },
-    {
-      "date": "2026-09-15",
-      "day_status": "closed",
-      "location_code": null,
-      "location_label": null,
-      "slots": []
     },
     {
       "date": "2026-09-16",
@@ -348,6 +419,6 @@
       ]
     }
   ],
-  "generated_at": "2026-08-12T22:13:01+09:00",
-  "source_version": "8655aef2e04bda594cee4dacd31915c487239b8f"
+  "generated_at": "2026-08-13T04:03:16+09:00",
+  "source_version": "d627a152346c63b1c7118241a129be5314f90f7d"
 }
