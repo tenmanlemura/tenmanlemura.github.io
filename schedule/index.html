@@ -339,7 +339,7 @@ function render() {
 
   const times = buildTimeAxis(days);
   if (times.length === 0) {
-    const hasClosed = days.some(d => d.data && d.data.day_status === "closed");
+    const hasClosed = days.some(d => d.data && d.data.day_status === "closed" && d.data.unavailable_reason !== "too_soon");
     showStatus(hasClosed ? "この週はお休みをいただいています" : "この週の営業時間帯が設定されていません", false);
     return;
   }
@@ -356,7 +356,7 @@ function render() {
     if (data) {
       if (data.day_status === "event") {
         badge = `<span class="event-badge">出張</span>`;
-      } else if (data.day_status === "closed") {
+      } else if (data.day_status === "closed" && data.unavailable_reason !== "too_soon") {
         badge = `<span class="closed-badge">店休</span>`;
       } else if (data.location_code) {
         badge = `<span class="store-badge ${data.location_code === "dazaifu" ? "dazaifu" : ""}">${STORE_SHORT[data.location_code] || ""}</span>`;
