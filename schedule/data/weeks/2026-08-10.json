@@ -47,81 +47,11 @@
     },
     {
       "date": "2026-08-14",
-      "day_status": "open",
+      "day_status": "closed",
       "location_code": null,
       "location_label": null,
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "10:30",
-          "status": "open"
-        },
-        {
-          "start": "10:30",
-          "end": "11:00",
-          "status": "open"
-        },
-        {
-          "start": "11:00",
-          "end": "11:30",
-          "status": "open"
-        },
-        {
-          "start": "11:30",
-          "end": "12:00",
-          "status": "open"
-        },
-        {
-          "start": "12:00",
-          "end": "12:30",
-          "status": "open"
-        },
-        {
-          "start": "12:30",
-          "end": "13:00",
-          "status": "open"
-        },
-        {
-          "start": "13:00",
-          "end": "13:30",
-          "status": "open"
-        },
-        {
-          "start": "13:30",
-          "end": "14:00",
-          "status": "open"
-        },
-        {
-          "start": "14:00",
-          "end": "14:30",
-          "status": "open"
-        },
-        {
-          "start": "14:30",
-          "end": "15:00",
-          "status": "open"
-        },
-        {
-          "start": "15:00",
-          "end": "15:30",
-          "status": "open"
-        },
-        {
-          "start": "15:30",
-          "end": "16:00",
-          "status": "open"
-        },
-        {
-          "start": "16:00",
-          "end": "16:30",
-          "status": "open"
-        },
-        {
-          "start": "16:30",
-          "end": "17:00",
-          "status": "open"
-        }
-      ]
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-08-15",
@@ -280,6 +210,6 @@
       ]
     }
   ],
-  "generated_at": "2026-08-13T16:37:04+09:00",
-  "source_version": "9dcce351edf3cb580765aea20b215a7c11619d57"
+  "generated_at": "2026-08-13T22:15:25+09:00",
+  "source_version": "6c5fea50e0c4ac8ddd6cb255224364eb376bb92e"
 }
