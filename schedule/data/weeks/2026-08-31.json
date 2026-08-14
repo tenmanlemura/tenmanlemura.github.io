@@ -15,14 +15,14 @@
   "days": [
     {
       "date": "2026-08-31",
-      "day_status": "limited",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
+      "day_status": "open",
+      "location_code": null,
+      "location_label": null,
       "slots": [
         {
           "start": "10:00",
           "end": "10:30",
-          "status": "blocked"
+          "status": "open"
         },
         {
           "start": "10:30",
@@ -171,34 +171,34 @@
     },
     {
       "date": "2026-09-02",
-      "day_status": "open",
-      "location_code": null,
-      "location_label": null,
+      "day_status": "limited",
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
       "slots": [
         {
           "start": "10:00",
           "end": "10:30",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "11:00",
           "end": "11:30",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "11:30",
           "end": "12:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "12:00",
           "end": "12:30",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "12:30",
@@ -223,27 +223,27 @@
         {
           "start": "14:30",
           "end": "15:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "15:00",
           "end": "15:30",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "15:30",
           "end": "16:00",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "16:00",
           "end": "16:30",
-          "status": "open"
+          "status": "blocked"
         },
         {
           "start": "16:30",
           "end": "17:00",
-          "status": "open"
+          "status": "blocked"
         }
       ]
     },
@@ -419,6 +419,6 @@
       ]
     }
   ],
-  "generated_at": "2026-08-14T11:05:02+09:00",
-  "source_version": "8729bd086c343e72e4eef7fd59a595dbe2a5a9f3"
+  "generated_at": "2026-08-14T16:27:00+09:00",
+  "source_version": "4ffbbe51614689d17f732054641e72b107e8b38d"
 }
