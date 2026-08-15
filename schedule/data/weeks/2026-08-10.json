@@ -63,127 +63,13 @@
     },
     {
       "date": "2026-08-16",
-      "day_status": "open",
+      "day_status": "closed",
       "location_code": null,
       "location_label": null,
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "10:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "10:30",
-          "end": "11:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "11:00",
-          "end": "11:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "11:30",
-          "end": "12:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "12:00",
-          "end": "12:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "12:30",
-          "end": "13:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "13:00",
-          "end": "13:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "13:30",
-          "end": "14:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "14:00",
-          "end": "14:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "14:30",
-          "end": "15:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "15:00",
-          "end": "15:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "15:30",
-          "end": "16:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "16:00",
-          "end": "16:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "16:30",
-          "end": "17:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "17:00",
-          "end": "17:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "17:30",
-          "end": "18:00",
-          "status": "open",
-          "is_start_candidate": false
-        },
-        {
-          "start": "18:00",
-          "end": "18:30",
-          "status": "open",
-          "is_start_candidate": false
-        },
-        {
-          "start": "18:30",
-          "end": "19:00",
-          "status": "open",
-          "is_start_candidate": false
-        },
-        {
-          "start": "19:00",
-          "end": "19:30",
-          "status": "open",
-          "is_start_candidate": false
-        }
-      ]
+      "slots": [],
+      "unavailable_reason": "too_soon"
     }
   ],
-  "generated_at": "2026-08-15T15:40:35+09:00",
-  "source_version": "5c2163c39c5f08dabb14e9aa379f61d7bcc8b99c"
+  "generated_at": "2026-08-15T21:39:48+09:00",
+  "source_version": "07d670b63497459af94896f2a27fd83b2295aab9"
 }
