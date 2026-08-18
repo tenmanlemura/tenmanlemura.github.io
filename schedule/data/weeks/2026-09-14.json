@@ -137,7 +137,7 @@
     },
     {
       "date": "2026-09-15",
-      "day_status": "open",
+      "day_status": "limited",
       "location_code": null,
       "location_label": null,
       "slots": [
@@ -204,25 +204,25 @@
         {
           "start": "15:00",
           "end": "15:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "15:30",
           "end": "16:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "16:00",
           "end": "16:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "16:30",
           "end": "17:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
@@ -639,6 +639,6 @@
       ]
     }
   ],
-  "generated_at": "2026-08-18T03:40:47+09:00",
-  "source_version": "b820adad0dd7dccf451504530a14785b43e07751"
+  "generated_at": "2026-08-18T10:18:24+09:00",
+  "source_version": "db4dce0ae80730b5371c6bf01c6fc1a5bb328e85"
 }
