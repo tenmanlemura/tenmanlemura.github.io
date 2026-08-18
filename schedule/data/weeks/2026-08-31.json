@@ -15,7 +15,7 @@
   "days": [
     {
       "date": "2026-08-31",
-      "day_status": "open",
+      "day_status": "limited",
       "location_code": null,
       "location_label": null,
       "slots": [
@@ -94,43 +94,43 @@
         {
           "start": "16:00",
           "end": "16:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "16:30",
           "end": "17:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "17:00",
           "end": "17:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "17:30",
           "end": "18:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:00",
           "end": "18:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:30",
           "end": "19:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "19:00",
           "end": "19:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         }
       ]
@@ -228,31 +228,31 @@
         {
           "start": "17:00",
           "end": "17:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "17:30",
           "end": "18:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:00",
           "end": "18:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:30",
           "end": "19:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "19:00",
           "end": "19:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         }
       ]
@@ -350,31 +350,31 @@
         {
           "start": "17:00",
           "end": "17:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "17:30",
           "end": "18:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:00",
           "end": "18:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:30",
           "end": "19:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "19:00",
           "end": "19:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         }
       ]
@@ -390,7 +390,7 @@
       "date": "2026-09-04",
       "day_status": "event",
       "location_code": null,
-      "event_name": "出張",
+      "event_name": "市内",
       "event_venue": "",
       "slots": []
     },
@@ -520,11 +520,11 @@
       "date": "2026-09-06",
       "day_status": "event",
       "location_code": null,
-      "event_name": "未定",
+      "event_name": "個人様",
       "event_venue": "",
       "slots": []
     }
   ],
-  "generated_at": "2026-08-18T15:46:05+09:00",
-  "source_version": "f82f24cbe1de9eb52c76ba29cfd90aadfc983492"
+  "generated_at": "2026-08-18T21:49:43+09:00",
+  "source_version": "5c21222aef777229eacabb120e8d5ddad3f21ef1"
 }
