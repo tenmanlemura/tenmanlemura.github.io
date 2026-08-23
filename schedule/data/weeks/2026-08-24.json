@@ -18,7 +18,8 @@
       "day_status": "closed",
       "location_code": null,
       "location_label": null,
-      "slots": []
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-08-25",
@@ -639,6 +640,6 @@
       ]
     }
   ],
-  "generated_at": "2026-08-23T15:42:49+09:00",
-  "source_version": "0e0340d916b57f7540dbece67ccdcf1d3991a0d6"
+  "generated_at": "2026-08-23T21:42:38+09:00",
+  "source_version": "712c9f028ca85f1d87068cf1e0b03df780234608"
 }
