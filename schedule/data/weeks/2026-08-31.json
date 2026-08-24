@@ -260,19 +260,19 @@
     {
       "date": "2026-09-02",
       "day_status": "limited",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
+      "location_code": "tanushimaru",
+      "location_label": "田主丸店",
       "slots": [
         {
           "start": "10:00",
           "end": "10:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
@@ -320,19 +320,19 @@
         {
           "start": "14:30",
           "end": "15:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "15:00",
           "end": "15:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "15:30",
           "end": "16:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
@@ -362,19 +362,19 @@
         {
           "start": "18:00",
           "end": "18:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": false
         },
         {
           "start": "18:30",
           "end": "19:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": false
         },
         {
           "start": "19:00",
           "end": "19:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": false
         }
       ]
@@ -525,6 +525,6 @@
       "slots": []
     }
   ],
-  "generated_at": "2026-08-24T21:53:19+09:00",
-  "source_version": "626ff4a37fc2e795fd532f4ba58478fab93808cf"
+  "generated_at": "2026-08-25T03:41:57+09:00",
+  "source_version": "35d3cb533969a51d2358261e80bedcc39aa17d03"
 }
