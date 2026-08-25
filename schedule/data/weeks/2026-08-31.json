@@ -272,7 +272,7 @@
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
@@ -362,19 +362,19 @@
         {
           "start": "18:00",
           "end": "18:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:30",
           "end": "19:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "19:00",
           "end": "19:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         }
       ]
@@ -754,6 +754,6 @@
       "slots": []
     }
   ],
-  "generated_at": "2026-08-25T21:50:36+09:00",
-  "source_version": "c64d1081f1a78e747dbce5eacb59e9d6a67e8541"
+  "generated_at": "2026-08-26T03:41:07+09:00",
+  "source_version": "7474e6f7a48871b0de33972c9260c38a90de494d"
 }
