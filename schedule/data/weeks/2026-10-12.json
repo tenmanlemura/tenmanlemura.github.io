@@ -15,13 +15,6 @@
   "days": [
     {
       "date": "2026-10-12",
-      "day_status": "closed",
-      "location_code": null,
-      "location_label": null,
-      "slots": []
-    },
-    {
-      "date": "2026-10-13",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -141,6 +134,13 @@
           "is_start_candidate": false
         }
       ]
+    },
+    {
+      "date": "2026-10-13",
+      "day_status": "closed",
+      "location_code": null,
+      "location_label": null,
+      "slots": []
     },
     {
       "date": "2026-10-14",
@@ -410,6 +410,6 @@
       ]
     }
   ],
-  "generated_at": "2026-08-25T15:50:52+09:00",
-  "source_version": "1a69693cb2b82541d5aa44f29fbe849c4264d0b5"
+  "generated_at": "2026-08-25T21:50:36+09:00",
+  "source_version": "c64d1081f1a78e747dbce5eacb59e9d6a67e8541"
 }

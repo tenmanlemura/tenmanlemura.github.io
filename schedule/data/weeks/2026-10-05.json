@@ -405,11 +405,11 @@
       "date": "2026-10-11",
       "day_status": "event",
       "location_code": null,
-      "event_name": "個人様",
+      "event_name": "キチココアフター",
       "event_venue": "",
       "slots": []
     }
   ],
-  "generated_at": "2026-08-25T15:50:52+09:00",
-  "source_version": "1a69693cb2b82541d5aa44f29fbe849c4264d0b5"
+  "generated_at": "2026-08-25T21:50:36+09:00",
+  "source_version": "c64d1081f1a78e747dbce5eacb59e9d6a67e8541"
 }
