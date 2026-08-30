@@ -1,5 +1,5 @@
 {
-  "week_start": "2026-09-07",
+  "week_start": "2026-10-19",
   "courses": [
     {
       "code": "60",
@@ -14,14 +14,14 @@
   ],
   "days": [
     {
-      "date": "2026-09-07",
+      "date": "2026-10-19",
       "day_status": "closed",
       "location_code": null,
       "location_label": null,
       "slots": []
     },
     {
-      "date": "2026-09-08",
+      "date": "2026-10-20",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -143,129 +143,15 @@
       ]
     },
     {
-      "date": "2026-09-09",
-      "day_status": "open",
+      "date": "2026-10-21",
+      "day_status": "event",
       "location_code": null,
-      "location_label": null,
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "10:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "10:30",
-          "end": "11:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "11:00",
-          "end": "11:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "11:30",
-          "end": "12:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "12:00",
-          "end": "12:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "12:30",
-          "end": "13:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "13:00",
-          "end": "13:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "13:30",
-          "end": "14:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "14:00",
-          "end": "14:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "14:30",
-          "end": "15:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "15:00",
-          "end": "15:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "15:30",
-          "end": "16:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "16:00",
-          "end": "16:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "16:30",
-          "end": "17:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "17:00",
-          "end": "17:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "17:30",
-          "end": "18:00",
-          "status": "open",
-          "is_start_candidate": false
-        },
-        {
-          "start": "18:00",
-          "end": "18:30",
-          "status": "open",
-          "is_start_candidate": false
-        },
-        {
-          "start": "18:30",
-          "end": "19:00",
-          "status": "open",
-          "is_start_candidate": false
-        },
-        {
-          "start": "19:00",
-          "end": "19:30",
-          "status": "open",
-          "is_start_candidate": false
-        }
-      ]
+      "event_name": "おくんち",
+      "event_venue": "",
+      "slots": []
     },
     {
-      "date": "2026-09-10",
+      "date": "2026-10-22",
       "day_status": "open",
       "location_code": "tanushimaru",
       "location_label": "田主丸店",
@@ -387,7 +273,7 @@
       ]
     },
     {
-      "date": "2026-09-11",
+      "date": "2026-10-23",
       "day_status": "event",
       "location_code": null,
       "event_name": "市内",
@@ -395,20 +281,248 @@
       "slots": []
     },
     {
-      "date": "2026-09-12",
-      "day_status": "event",
+      "date": "2026-10-24",
+      "day_status": "open",
       "location_code": null,
-      "event_name": "個人様",
-      "event_venue": "",
-      "slots": []
+      "location_label": null,
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "10:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "10:30",
+          "end": "11:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:00",
+          "end": "11:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:30",
+          "end": "12:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:00",
+          "end": "12:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:30",
+          "end": "13:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:00",
+          "end": "13:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:30",
+          "end": "14:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:00",
+          "end": "14:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:30",
+          "end": "15:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:00",
+          "end": "15:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:30",
+          "end": "16:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:00",
+          "end": "16:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:30",
+          "end": "17:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:00",
+          "end": "17:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:30",
+          "end": "18:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:00",
+          "end": "18:30",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:30",
+          "end": "19:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "19:00",
+          "end": "19:30",
+          "status": "open",
+          "is_start_candidate": false
+        }
+      ]
     },
     {
-      "date": "2026-09-13",
-      "day_status": "event",
+      "date": "2026-10-25",
+      "day_status": "open",
       "location_code": null,
-      "event_name": "個人様",
-      "event_venue": "",
-      "slots": []
+      "location_label": null,
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "10:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "10:30",
+          "end": "11:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:00",
+          "end": "11:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:30",
+          "end": "12:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:00",
+          "end": "12:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:30",
+          "end": "13:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:00",
+          "end": "13:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:30",
+          "end": "14:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:00",
+          "end": "14:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:30",
+          "end": "15:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:00",
+          "end": "15:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:30",
+          "end": "16:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:00",
+          "end": "16:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:30",
+          "end": "17:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:00",
+          "end": "17:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:30",
+          "end": "18:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:00",
+          "end": "18:30",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:30",
+          "end": "19:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "19:00",
+          "end": "19:30",
+          "status": "open",
+          "is_start_candidate": false
+        }
+      ]
     }
   ],
   "generated_at": "2026-08-31T01:15:45+09:00",
