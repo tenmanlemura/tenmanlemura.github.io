@@ -31,125 +31,11 @@
     },
     {
       "date": "2026-09-02",
-      "day_status": "limited",
-      "location_code": "tanushimaru",
-      "location_label": "田主丸店",
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "10:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "10:30",
-          "end": "11:00",
-          "status": "blocked",
-          "is_start_candidate": true
-        },
-        {
-          "start": "11:00",
-          "end": "11:30",
-          "status": "blocked",
-          "is_start_candidate": true
-        },
-        {
-          "start": "11:30",
-          "end": "12:00",
-          "status": "blocked",
-          "is_start_candidate": true
-        },
-        {
-          "start": "12:00",
-          "end": "12:30",
-          "status": "blocked",
-          "is_start_candidate": true
-        },
-        {
-          "start": "12:30",
-          "end": "13:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "13:00",
-          "end": "13:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "13:30",
-          "end": "14:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "14:00",
-          "end": "14:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "14:30",
-          "end": "15:00",
-          "status": "blocked",
-          "is_start_candidate": true
-        },
-        {
-          "start": "15:00",
-          "end": "15:30",
-          "status": "blocked",
-          "is_start_candidate": true
-        },
-        {
-          "start": "15:30",
-          "end": "16:00",
-          "status": "blocked",
-          "is_start_candidate": true
-        },
-        {
-          "start": "16:00",
-          "end": "16:30",
-          "status": "blocked",
-          "is_start_candidate": true
-        },
-        {
-          "start": "16:30",
-          "end": "17:00",
-          "status": "blocked",
-          "is_start_candidate": true
-        },
-        {
-          "start": "17:00",
-          "end": "17:30",
-          "status": "blocked",
-          "is_start_candidate": true
-        },
-        {
-          "start": "17:30",
-          "end": "18:00",
-          "status": "blocked",
-          "is_start_candidate": false
-        },
-        {
-          "start": "18:00",
-          "end": "18:30",
-          "status": "blocked",
-          "is_start_candidate": false
-        },
-        {
-          "start": "18:30",
-          "end": "19:00",
-          "status": "blocked",
-          "is_start_candidate": false
-        },
-        {
-          "start": "19:00",
-          "end": "19:30",
-          "status": "blocked",
-          "is_start_candidate": false
-        }
-      ]
+      "day_status": "closed",
+      "location_code": null,
+      "location_label": null,
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-09-03",
@@ -412,6 +298,6 @@
       "slots": []
     }
   ],
-  "generated_at": "2026-09-01T13:06:34+09:00",
-  "source_version": "5d0cd0145c76b9dcb5ec50677bb08e1eaff6316f"
+  "generated_at": "2026-09-01T20:17:07+09:00",
+  "source_version": "3b011bcc73cacf5efaceec93b5f53bc46cfb4077"
 }
