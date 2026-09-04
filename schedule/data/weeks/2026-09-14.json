@@ -15,7 +15,7 @@
   "days": [
     {
       "date": "2026-09-14",
-      "day_status": "open",
+      "day_status": "limited",
       "location_code": null,
       "location_label": null,
       "slots": [
@@ -82,180 +82,66 @@
         {
           "start": "15:00",
           "end": "15:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "15:30",
           "end": "16:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "16:00",
           "end": "16:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "16:30",
           "end": "17:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "17:00",
           "end": "17:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "17:30",
           "end": "18:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:00",
           "end": "18:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:30",
           "end": "19:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "19:00",
           "end": "19:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         }
       ]
     },
     {
       "date": "2026-09-15",
-      "day_status": "open",
+      "day_status": "event",
       "location_code": null,
-      "location_label": null,
-      "slots": [
-        {
-          "start": "10:00",
-          "end": "10:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "10:30",
-          "end": "11:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "11:00",
-          "end": "11:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "11:30",
-          "end": "12:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "12:00",
-          "end": "12:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "12:30",
-          "end": "13:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "13:00",
-          "end": "13:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "13:30",
-          "end": "14:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "14:00",
-          "end": "14:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "14:30",
-          "end": "15:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "15:00",
-          "end": "15:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "15:30",
-          "end": "16:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "16:00",
-          "end": "16:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "16:30",
-          "end": "17:00",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "17:00",
-          "end": "17:30",
-          "status": "open",
-          "is_start_candidate": true
-        },
-        {
-          "start": "17:30",
-          "end": "18:00",
-          "status": "open",
-          "is_start_candidate": false
-        },
-        {
-          "start": "18:00",
-          "end": "18:30",
-          "status": "open",
-          "is_start_candidate": false
-        },
-        {
-          "start": "18:30",
-          "end": "19:00",
-          "status": "open",
-          "is_start_candidate": false
-        },
-        {
-          "start": "19:00",
-          "end": "19:30",
-          "status": "open",
-          "is_start_candidate": false
-        }
-      ]
+      "event_name": "ゆめタウン",
+      "event_venue": "",
+      "slots": []
     },
     {
       "date": "2026-09-16",
@@ -381,6 +267,128 @@
     },
     {
       "date": "2026-09-17",
+      "day_status": "limited",
+      "location_code": null,
+      "location_label": null,
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "10:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "10:30",
+          "end": "11:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:00",
+          "end": "11:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:30",
+          "end": "12:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:00",
+          "end": "12:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:30",
+          "end": "13:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:00",
+          "end": "13:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:30",
+          "end": "14:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:00",
+          "end": "14:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:30",
+          "end": "15:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:00",
+          "end": "15:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:30",
+          "end": "16:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:00",
+          "end": "16:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:30",
+          "end": "17:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:00",
+          "end": "17:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:30",
+          "end": "18:00",
+          "status": "blocked",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:00",
+          "end": "18:30",
+          "status": "blocked",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:30",
+          "end": "19:00",
+          "status": "blocked",
+          "is_start_candidate": false
+        },
+        {
+          "start": "19:00",
+          "end": "19:30",
+          "status": "blocked",
+          "is_start_candidate": false
+        }
+      ]
+    },
+    {
+      "date": "2026-09-18",
       "day_status": "open",
       "location_code": null,
       "location_label": null,
@@ -500,14 +508,6 @@
           "is_start_candidate": false
         }
       ]
-    },
-    {
-      "date": "2026-09-18",
-      "day_status": "event",
-      "location_code": null,
-      "event_name": "市内",
-      "event_venue": "",
-      "slots": []
     },
     {
       "date": "2026-09-19",
@@ -754,6 +754,6 @@
       ]
     }
   ],
-  "generated_at": "2026-09-04T05:39:54+09:00",
-  "source_version": "437340e01297e1f52b9f0e3682c92c32c6fc7a08"
+  "generated_at": "2026-09-04T12:27:56+09:00",
+  "source_version": "2db9ed480a788b32e365425b58fb12e121fc74f1"
 }
