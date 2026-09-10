@@ -16,8 +16,8 @@
     {
       "date": "2026-09-14",
       "day_status": "limited",
-      "location_code": null,
-      "location_label": null,
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
       "slots": [
         {
           "start": "10:00",
@@ -268,8 +268,8 @@
     {
       "date": "2026-09-17",
       "day_status": "limited",
-      "location_code": null,
-      "location_label": null,
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
       "slots": [
         {
           "start": "10:00",
@@ -512,8 +512,8 @@
     {
       "date": "2026-09-19",
       "day_status": "open",
-      "location_code": null,
-      "location_label": null,
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
       "slots": [
         {
           "start": "10:00",
@@ -634,8 +634,8 @@
     {
       "date": "2026-09-20",
       "day_status": "open",
-      "location_code": null,
-      "location_label": null,
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
       "slots": [
         {
           "start": "10:00",
@@ -754,6 +754,6 @@
       ]
     }
   ],
-  "generated_at": "2026-09-10T12:37:59+09:00",
-  "source_version": "170d5c9320b69e3bf065a07a16a153ecdf86fe85"
+  "generated_at": "2026-09-10T19:51:41+09:00",
+  "source_version": "4e0509aea38fb2a26399eb341cfc62a1906cb148"
 }
