@@ -211,55 +211,55 @@
         {
           "start": "15:00",
           "end": "15:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "15:30",
           "end": "16:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "16:00",
           "end": "16:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "16:30",
           "end": "17:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "17:00",
           "end": "17:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "17:30",
           "end": "18:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:00",
           "end": "18:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:30",
           "end": "19:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "19:00",
           "end": "19:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         }
       ]
@@ -410,6 +410,6 @@
       ]
     }
   ],
-  "generated_at": "2026-09-14T21:07:19+09:00",
-  "source_version": "c3b8c9830083c4dbffbe4477f2d868bf2b563840"
+  "generated_at": "2026-09-15T06:36:43+09:00",
+  "source_version": "d854992d980460dafd60c3d19c138f3aedeca8e4"
 }
