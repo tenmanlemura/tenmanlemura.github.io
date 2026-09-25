@@ -15,44 +15,51 @@
   "days": [
     {
       "date": "2026-10-12",
-      "day_status": "open",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
+      "day_status": "closed",
+      "location_code": null,
+      "location_label": null,
+      "slots": []
+    },
+    {
+      "date": "2026-10-13",
+      "day_status": "limited",
+      "location_code": "tanushimaru",
+      "location_label": "田主丸店",
       "slots": [
         {
           "start": "10:00",
           "end": "10:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "11:00",
           "end": "11:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "11:30",
           "end": "12:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "12:00",
           "end": "12:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "12:30",
           "end": "13:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
@@ -134,13 +141,6 @@
           "is_start_candidate": false
         }
       ]
-    },
-    {
-      "date": "2026-10-13",
-      "day_status": "closed",
-      "location_code": null,
-      "location_label": null,
-      "slots": []
     },
     {
       "date": "2026-10-14",
@@ -275,7 +275,7 @@
       "date": "2026-10-16",
       "day_status": "event",
       "location_code": null,
-      "event_name": "市内",
+      "event_name": "ゆめタウン博多",
       "event_venue": "",
       "slots": []
     },
@@ -410,6 +410,6 @@
       ]
     }
   ],
-  "generated_at": "2026-09-25T12:58:20+09:00",
-  "source_version": "427e2608ffb3e09ae289b43312e08aa5498b610b"
+  "generated_at": "2026-09-25T20:23:29+09:00",
+  "source_version": "04fa71c70b7e3bea5be8ef9cb7c1f04df153f814"
 }

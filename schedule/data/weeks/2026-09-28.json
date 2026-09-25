@@ -47,38 +47,38 @@
       "date": "2026-10-02",
       "day_status": "event",
       "location_code": null,
-      "event_name": "市内",
+      "event_name": "ゆめタウン博多",
       "event_venue": "",
       "slots": []
     },
     {
       "date": "2026-10-03",
-      "day_status": "open",
+      "day_status": "limited",
       "location_code": "dazaifu",
       "location_label": "太宰府店",
       "slots": [
         {
           "start": "10:00",
           "end": "10:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "11:00",
           "end": "11:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "11:30",
           "end": "12:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
@@ -296,6 +296,6 @@
       ]
     }
   ],
-  "generated_at": "2026-09-25T12:58:20+09:00",
-  "source_version": "427e2608ffb3e09ae289b43312e08aa5498b610b"
+  "generated_at": "2026-09-25T20:23:29+09:00",
+  "source_version": "04fa71c70b7e3bea5be8ef9cb7c1f04df153f814"
 }

@@ -23,43 +23,43 @@
     {
       "date": "2026-10-27",
       "day_status": "limited",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
+      "location_code": "tanushimaru",
+      "location_label": "田主丸店",
       "slots": [
         {
           "start": "10:00",
           "end": "10:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "11:00",
           "end": "11:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "11:30",
           "end": "12:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "12:00",
           "end": "12:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "12:30",
           "end": "13:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
@@ -89,55 +89,55 @@
         {
           "start": "15:00",
           "end": "15:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "15:30",
           "end": "16:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "16:00",
           "end": "16:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "16:30",
           "end": "17:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "17:00",
           "end": "17:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "17:30",
           "end": "18:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": false
         },
         {
           "start": "18:00",
           "end": "18:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": false
         },
         {
           "start": "18:30",
           "end": "19:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": false
         },
         {
           "start": "19:00",
           "end": "19:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": false
         }
       ]
@@ -275,7 +275,7 @@
       "date": "2026-10-30",
       "day_status": "event",
       "location_code": null,
-      "event_name": "市内",
+      "event_name": "ゆめタウン博多",
       "event_venue": "",
       "slots": []
     },
@@ -524,6 +524,6 @@
       ]
     }
   ],
-  "generated_at": "2026-09-25T12:58:20+09:00",
-  "source_version": "427e2608ffb3e09ae289b43312e08aa5498b610b"
+  "generated_at": "2026-09-25T20:23:29+09:00",
+  "source_version": "04fa71c70b7e3bea5be8ef9cb7c1f04df153f814"
 }
