@@ -63,13 +63,13 @@
     },
     {
       "date": "2026-09-27",
-      "day_status": "event",
+      "day_status": "closed",
       "location_code": null,
-      "event_name": "ゆめタウン佐賀",
-      "event_venue": "",
-      "slots": []
+      "location_label": null,
+      "slots": [],
+      "unavailable_reason": "too_soon"
     }
   ],
-  "generated_at": "2026-09-26T13:03:07+09:00",
-  "source_version": "6c61f23c777d08be5b06dd986cf7f0fc7b27536f"
+  "generated_at": "2026-09-26T19:59:28+09:00",
+  "source_version": "245fb9a5988377820ab9264481ea2805876b796f"
 }
