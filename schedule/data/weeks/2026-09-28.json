@@ -23,11 +23,11 @@
     },
     {
       "date": "2026-09-29",
-      "day_status": "event",
+      "day_status": "closed",
       "location_code": null,
-      "event_name": "JA",
-      "event_venue": "",
-      "slots": []
+      "location_label": null,
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-09-30",
@@ -85,19 +85,19 @@
         {
           "start": "12:00",
           "end": "12:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "12:30",
           "end": "13:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "13:00",
           "end": "13:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
@@ -297,6 +297,6 @@
       ]
     }
   ],
-  "generated_at": "2026-09-28T13:17:59+09:00",
-  "source_version": "ec2ddf5fa8084276759cd789fe8b55f108e84a9d"
+  "generated_at": "2026-09-28T22:12:36+09:00",
+  "source_version": "8630b05b9059f849ddb400289c795d925a47138b"
 }
