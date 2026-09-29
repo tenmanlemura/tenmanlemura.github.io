@@ -289,44 +289,44 @@
     },
     {
       "date": "2026-10-18",
-      "day_status": "open",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
+      "day_status": "limited",
+      "location_code": "tanushimaru",
+      "location_label": "田主丸店",
       "slots": [
         {
           "start": "10:00",
           "end": "10:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "11:00",
           "end": "11:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "11:30",
           "end": "12:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "12:00",
           "end": "12:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "12:30",
           "end": "13:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
@@ -410,6 +410,6 @@
       ]
     }
   ],
-  "generated_at": "2026-09-29T08:01:13+09:00",
-  "source_version": "28826f378f1d73af4e64728e750c1c77645946de"
+  "generated_at": "2026-09-29T13:48:35+09:00",
+  "source_version": "9d9e440919968432160a4d96a2dd8db547fd61d6"
 }
