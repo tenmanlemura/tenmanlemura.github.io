@@ -31,11 +31,11 @@
     },
     {
       "date": "2026-09-30",
-      "day_status": "event",
+      "day_status": "closed",
       "location_code": null,
-      "event_name": "個人様",
-      "event_venue": "",
-      "slots": []
+      "location_label": null,
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-10-01",
@@ -103,37 +103,37 @@
         {
           "start": "13:30",
           "end": "14:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "14:00",
           "end": "14:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "14:30",
           "end": "15:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "15:00",
           "end": "15:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "15:30",
           "end": "16:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "16:00",
           "end": "16:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
@@ -297,6 +297,6 @@
       ]
     }
   ],
-  "generated_at": "2026-09-29T13:48:35+09:00",
-  "source_version": "9d9e440919968432160a4d96a2dd8db547fd61d6"
+  "generated_at": "2026-09-29T21:20:46+09:00",
+  "source_version": "6feef89d29a76d88c81c06ac64e8e3874de81382"
 }
