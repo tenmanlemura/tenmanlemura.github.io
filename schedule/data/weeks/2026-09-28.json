@@ -218,7 +218,7 @@
         {
           "start": "13:30",
           "end": "14:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
@@ -254,7 +254,7 @@
         {
           "start": "16:30",
           "end": "17:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
@@ -412,6 +412,6 @@
       ]
     }
   ],
-  "generated_at": "2026-09-30T06:59:45+09:00",
-  "source_version": "e84489f593ab28e7f93568fe8c6884317228de33"
+  "generated_at": "2026-09-30T13:34:38+09:00",
+  "source_version": "ad656c2e006352313167dd564f9735e135a4540e"
 }
