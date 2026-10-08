@@ -47,11 +47,11 @@
     },
     {
       "date": "2026-10-09",
-      "day_status": "event",
+      "day_status": "closed",
       "location_code": null,
-      "event_name": "ゆめタウン博多",
-      "event_venue": "",
-      "slots": []
+      "location_label": null,
+      "slots": [],
+      "unavailable_reason": "too_soon"
     },
     {
       "date": "2026-10-10",
@@ -184,6 +184,6 @@
       "slots": []
     }
   ],
-  "generated_at": "2026-10-08T14:04:45+09:00",
-  "source_version": "81a22e298f3eaa0c97cc8f8cac52ad828f483b71"
+  "generated_at": "2026-10-08T22:00:02+09:00",
+  "source_version": "1b826b9a796f2851808aefec13856670b23e70ed"
 }
