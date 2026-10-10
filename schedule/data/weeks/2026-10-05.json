@@ -63,13 +63,13 @@
     },
     {
       "date": "2026-10-11",
-      "day_status": "event",
+      "day_status": "closed",
       "location_code": null,
-      "event_name": "キチココアフター",
-      "event_venue": "",
-      "slots": []
+      "location_label": null,
+      "slots": [],
+      "unavailable_reason": "too_soon"
     }
   ],
-  "generated_at": "2026-10-10T13:53:15+09:00",
-  "source_version": "06cd24d966e46fa7ddcf8de4be52c7663174e235"
+  "generated_at": "2026-10-10T21:04:53+09:00",
+  "source_version": "eb85d7e59553f5fedef97b3b454432eee18e5df0"
 }
