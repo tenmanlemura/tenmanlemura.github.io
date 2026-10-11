@@ -284,7 +284,7 @@
       "date": "2026-11-21",
       "day_status": "event",
       "location_code": null,
-      "event_name": "朝倉",
+      "event_name": "文化祭",
       "event_venue": "",
       "slots": []
     },
@@ -411,6 +411,6 @@
       ]
     }
   ],
-  "generated_at": "2026-10-11T13:39:58+09:00",
-  "source_version": "72361854ee763600b0dc66594c4fa165f8ee10bd"
+  "generated_at": "2026-10-11T21:18:19+09:00",
+  "source_version": "530358e66af2ac1951d4e8f69c890defdd752716"
 }
