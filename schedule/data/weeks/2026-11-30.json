@@ -1,0 +1,531 @@
+{
+  "week_start": "2026-11-30",
+  "courses": [
+    {
+      "code": "60",
+      "duration_min": 60,
+      "price": 9000
+    },
+    {
+      "code": "80",
+      "duration_min": 80,
+      "price": 12000
+    }
+  ],
+  "days": [
+    {
+      "date": "2026-11-30",
+      "day_status": "event",
+      "location_code": null,
+      "event_name": "誕生会",
+      "event_venue": "",
+      "slots": []
+    },
+    {
+      "date": "2026-12-01",
+      "day_status": "limited",
+      "location_code": "tanushimaru",
+      "location_label": "田主丸店",
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "10:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "10:30",
+          "end": "11:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:00",
+          "end": "11:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:30",
+          "end": "12:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:00",
+          "end": "12:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:30",
+          "end": "13:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:00",
+          "end": "13:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:30",
+          "end": "14:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:00",
+          "end": "14:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:30",
+          "end": "15:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:00",
+          "end": "15:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:30",
+          "end": "16:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:00",
+          "end": "16:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:30",
+          "end": "17:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:00",
+          "end": "17:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:30",
+          "end": "18:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:00",
+          "end": "18:30",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:30",
+          "end": "19:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "19:00",
+          "end": "19:30",
+          "status": "open",
+          "is_start_candidate": false
+        }
+      ]
+    },
+    {
+      "date": "2026-12-02",
+      "day_status": "event",
+      "location_code": null,
+      "event_name": "占い教室",
+      "event_venue": "",
+      "slots": []
+    },
+    {
+      "date": "2026-12-03",
+      "day_status": "limited",
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "10:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "10:30",
+          "end": "11:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:00",
+          "end": "11:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:30",
+          "end": "12:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:00",
+          "end": "12:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:30",
+          "end": "13:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:00",
+          "end": "13:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:30",
+          "end": "14:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:00",
+          "end": "14:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:30",
+          "end": "15:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:00",
+          "end": "15:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:30",
+          "end": "16:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:00",
+          "end": "16:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:30",
+          "end": "17:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:00",
+          "end": "17:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:30",
+          "end": "18:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:00",
+          "end": "18:30",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:30",
+          "end": "19:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "19:00",
+          "end": "19:30",
+          "status": "open",
+          "is_start_candidate": false
+        }
+      ]
+    },
+    {
+      "date": "2026-12-04",
+      "day_status": "event",
+      "location_code": null,
+      "event_name": "ゆめタウン博多",
+      "event_venue": "",
+      "slots": []
+    },
+    {
+      "date": "2026-12-05",
+      "day_status": "open",
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "10:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "10:30",
+          "end": "11:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:00",
+          "end": "11:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:30",
+          "end": "12:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:00",
+          "end": "12:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:30",
+          "end": "13:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:00",
+          "end": "13:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:30",
+          "end": "14:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:00",
+          "end": "14:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:30",
+          "end": "15:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:00",
+          "end": "15:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:30",
+          "end": "16:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:00",
+          "end": "16:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:30",
+          "end": "17:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:00",
+          "end": "17:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:30",
+          "end": "18:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:00",
+          "end": "18:30",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:30",
+          "end": "19:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "19:00",
+          "end": "19:30",
+          "status": "open",
+          "is_start_candidate": false
+        }
+      ]
+    },
+    {
+      "date": "2026-12-06",
+      "day_status": "open",
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "10:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "10:30",
+          "end": "11:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:00",
+          "end": "11:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:30",
+          "end": "12:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:00",
+          "end": "12:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:30",
+          "end": "13:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:00",
+          "end": "13:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:30",
+          "end": "14:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:00",
+          "end": "14:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:30",
+          "end": "15:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:00",
+          "end": "15:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:30",
+          "end": "16:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:00",
+          "end": "16:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:30",
+          "end": "17:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:00",
+          "end": "17:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:30",
+          "end": "18:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:00",
+          "end": "18:30",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:30",
+          "end": "19:00",
+          "status": "open",
+          "is_start_candidate": false
+        },
+        {
+          "start": "19:00",
+          "end": "19:30",
+          "status": "open",
+          "is_start_candidate": false
+        }
+      ]
+    }
+  ],
+  "generated_at": "2026-10-12T06:37:24+09:00",
+  "source_version": "837682ae545566fce0a7afdc7bb4ba2dc8c69710"
+}
