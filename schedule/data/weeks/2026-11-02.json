@@ -152,9 +152,24 @@
     },
     {
       "date": "2026-11-05",
+      "day_status": "closed",
+      "location_code": null,
+      "location_label": null,
+      "slots": []
+    },
+    {
+      "date": "2026-11-06",
+      "day_status": "event",
+      "location_code": null,
+      "event_name": "夢タウン博多",
+      "event_venue": "",
+      "slots": []
+    },
+    {
+      "date": "2026-11-07",
       "day_status": "limited",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
+      "location_code": null,
+      "location_label": null,
       "slots": [
         {
           "start": "10:00",
@@ -213,7 +228,7 @@
         {
           "start": "14:30",
           "end": "15:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
@@ -271,22 +286,6 @@
           "is_start_candidate": false
         }
       ]
-    },
-    {
-      "date": "2026-11-06",
-      "day_status": "event",
-      "location_code": null,
-      "event_name": "夢タウン博多",
-      "event_venue": "",
-      "slots": []
-    },
-    {
-      "date": "2026-11-07",
-      "day_status": "event",
-      "location_code": null,
-      "event_name": "クワノブックス",
-      "event_venue": "",
-      "slots": []
     },
     {
       "date": "2026-11-08",
@@ -411,6 +410,6 @@
       ]
     }
   ],
-  "generated_at": "2026-10-12T13:55:17+09:00",
-  "source_version": "31932ba58724fd47c289bfa9447718db3b4bc93f"
+  "generated_at": "2026-10-12T23:43:42+09:00",
+  "source_version": "25dd924606ddecf0e59c1ce8ab795e70406bbbeb"
 }
