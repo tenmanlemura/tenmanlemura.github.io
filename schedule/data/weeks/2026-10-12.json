@@ -63,13 +63,13 @@
     },
     {
       "date": "2026-10-18",
-      "day_status": "event",
+      "day_status": "closed",
       "location_code": null,
-      "event_name": "久留米",
-      "event_venue": "",
-      "slots": []
+      "location_label": null,
+      "slots": [],
+      "unavailable_reason": "too_soon"
     }
   ],
-  "generated_at": "2026-10-17T12:27:45+09:00",
-  "source_version": "952cbc39f8c8ced578d78783f49adbda576cb50b"
+  "generated_at": "2026-10-17T19:18:17+09:00",
+  "source_version": "633837e57c94ce528e653ea5b2f97bc91ce5614f"
 }
