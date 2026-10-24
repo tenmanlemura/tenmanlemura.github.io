@@ -15,51 +15,44 @@
   "days": [
     {
       "date": "2026-10-26",
-      "day_status": "closed",
-      "location_code": null,
-      "location_label": null,
-      "slots": []
-    },
-    {
-      "date": "2026-10-27",
       "day_status": "limited",
-      "location_code": "tanushimaru",
-      "location_label": "田主丸店",
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
       "slots": [
         {
           "start": "10:00",
           "end": "10:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "11:00",
           "end": "11:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "11:30",
           "end": "12:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "12:00",
           "end": "12:30",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
           "start": "12:30",
           "end": "13:00",
-          "status": "blocked",
+          "status": "open",
           "is_start_candidate": true
         },
         {
@@ -83,61 +76,183 @@
         {
           "start": "14:30",
           "end": "15:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "15:00",
           "end": "15:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "15:30",
           "end": "16:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "16:00",
           "end": "16:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "16:30",
           "end": "17:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "17:00",
           "end": "17:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "17:30",
           "end": "18:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:00",
           "end": "18:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "18:30",
           "end": "19:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": false
         },
         {
           "start": "19:00",
           "end": "19:30",
+          "status": "blocked",
+          "is_start_candidate": false
+        }
+      ]
+    },
+    {
+      "date": "2026-10-27",
+      "day_status": "limited",
+      "location_code": "dazaifu",
+      "location_label": "太宰府店",
+      "slots": [
+        {
+          "start": "10:00",
+          "end": "10:30",
           "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "10:30",
+          "end": "11:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:00",
+          "end": "11:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "11:30",
+          "end": "12:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:00",
+          "end": "12:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "12:30",
+          "end": "13:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:00",
+          "end": "13:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "13:30",
+          "end": "14:00",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:00",
+          "end": "14:30",
+          "status": "open",
+          "is_start_candidate": true
+        },
+        {
+          "start": "14:30",
+          "end": "15:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:00",
+          "end": "15:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "15:30",
+          "end": "16:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:00",
+          "end": "16:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "16:30",
+          "end": "17:00",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:00",
+          "end": "17:30",
+          "status": "blocked",
+          "is_start_candidate": true
+        },
+        {
+          "start": "17:30",
+          "end": "18:00",
+          "status": "blocked",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:00",
+          "end": "18:30",
+          "status": "blocked",
+          "is_start_candidate": false
+        },
+        {
+          "start": "18:30",
+          "end": "19:00",
+          "status": "blocked",
+          "is_start_candidate": false
+        },
+        {
+          "start": "19:00",
+          "end": "19:30",
+          "status": "blocked",
           "is_start_candidate": false
         }
       ]
@@ -275,8 +390,8 @@
     {
       "date": "2026-10-30",
       "day_status": "open",
-      "location_code": "dazaifu",
-      "location_label": "太宰府店",
+      "location_code": "tanushimaru",
+      "location_label": "田主丸店",
       "slots": [
         {
           "start": "10:00",
@@ -525,6 +640,6 @@
       "slots": []
     }
   ],
-  "generated_at": "2026-10-25T24:33:35+09:00",
-  "source_version": "bbe5c3e1b7aa4149b4c75d4089f0fa582a33ade2"
+  "generated_at": "2026-10-25T05:24:26+09:00",
+  "source_version": "9e5501b205edd069d61b19e75a1ed3dd6e0bf224"
 }
