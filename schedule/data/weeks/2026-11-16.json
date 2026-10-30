@@ -152,25 +152,25 @@
         {
           "start": "10:00",
           "end": "10:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "10:30",
           "end": "11:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "11:00",
           "end": "11:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "11:30",
           "end": "12:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
@@ -412,6 +412,6 @@
       "slots": []
     }
   ],
-  "generated_at": "2026-10-30T21:20:23+09:00",
-  "source_version": "b4108f05ed19f72b79cbfb0d69de2c830ac05685"
+  "generated_at": "2026-10-31T07:00:54+09:00",
+  "source_version": "42f7b82aa926f84f7715ce8b0b9e9c4b5e0623ec"
 }
