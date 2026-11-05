@@ -318,43 +318,43 @@
         {
           "start": "13:00",
           "end": "13:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "13:30",
           "end": "14:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "14:00",
           "end": "14:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "14:30",
           "end": "15:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "15:00",
           "end": "15:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "15:30",
           "end": "16:00",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
           "start": "16:00",
           "end": "16:30",
-          "status": "open",
+          "status": "blocked",
           "is_start_candidate": true
         },
         {
@@ -412,6 +412,6 @@
       "slots": []
     }
   ],
-  "generated_at": "2026-11-05T14:39:54+09:00",
-  "source_version": "a0adb9634a2e035152aab693ea637142d625691b"
+  "generated_at": "2026-11-05T23:13:05+09:00",
+  "source_version": "047d547fe2fdf9f9aba25b11f7f3f75072d715dd"
 }
